@@ -4,8 +4,6 @@ let settings = window.CaseformConfig.load();
 let products = settings.products;
 
 const productGrid = document.querySelector("#product-grid");
-const productPrev = document.querySelector("#product-prev");
-const productNext = document.querySelector("#product-next");
 const hero = document.querySelector(".hero");
 const heroTitle = document.querySelector("#hero-title");
 const heroSubtitle = document.querySelector("#hero-subtitle");
@@ -13,8 +11,6 @@ const heroCopyLink = document.querySelector("#hero-copy-link");
 const heroMediaLink = document.querySelector("#hero-media-link");
 const heroPreload = document.querySelector("#hero-preload");
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
-const mobileQuery = window.matchMedia("(max-width: 720px)");
-let productSlideTimer;
 let heroSlideTimer;
 let heroSwapTimer;
 let activeHeroSlide = 0;
@@ -180,7 +176,7 @@ function renderProducts() {
   productGrid.innerHTML = products
     .map(
       (product, index) => `
-        <a class="product-card product-slide" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
+        <a class="product-card" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
           <span class="product-visual${productHasMedia(product) ? " has-product-media" : ""}">
             ${productMediaMarkup(product, { mediaClass: "product-media product-card-media" })}
           </span>
@@ -196,55 +192,6 @@ function renderProducts() {
       `,
     )
     .join("");
-
-  updateSliderButtons();
-}
-
-function slideProducts(direction) {
-  const slide = productGrid.querySelector(".product-slide");
-  if (!slide) return;
-
-  const gap = Number.parseFloat(getComputedStyle(productGrid).columnGap) || 16;
-  productGrid.scrollBy({
-    left: direction * (slide.getBoundingClientRect().width + gap),
-    behavior: "smooth",
-  });
-}
-
-function scrollToNextProduct() {
-  const maxScroll = productGrid.scrollWidth - productGrid.clientWidth - 2;
-  if (maxScroll <= 2) return;
-
-  if (productGrid.scrollLeft >= maxScroll) {
-    productGrid.scrollTo({ left: 0, behavior: "smooth" });
-    return;
-  }
-
-  slideProducts(1);
-}
-
-function startProductSlider() {
-  stopProductSlider();
-  if (mobileQuery.matches) return;
-
-  productSlideTimer = window.setInterval(() => {
-    if (!document.hidden) scrollToNextProduct();
-  }, 4200);
-}
-
-function stopProductSlider() {
-  if (productSlideTimer) {
-    window.clearInterval(productSlideTimer);
-    productSlideTimer = null;
-  }
-}
-
-function updateSliderButtons() {
-  if (!productPrev || !productNext) return;
-
-  const maxScroll = productGrid.scrollWidth - productGrid.clientWidth - 2;
-  productPrev.disabled = productGrid.scrollLeft <= 2;
-  productNext.disabled = productGrid.scrollLeft >= maxScroll;
 }
 
 function refreshFromStorage() {
@@ -256,12 +203,10 @@ function refreshFromStorage() {
   activeHeroSlide = 0;
   applySettings();
   renderProducts();
-  startProductSlider();
 }
 
 applySettings();
 renderProducts();
-startProductSlider();
 
 document.querySelector("#hero-slide-dots").addEventListener("click", (event) => {
   const dot = event.target.closest("[data-hero-dot]");
@@ -273,22 +218,6 @@ hero.addEventListener("mouseenter", stopHeroSlider);
 hero.addEventListener("mouseleave", startHeroSlider);
 hero.addEventListener("focusin", stopHeroSlider);
 hero.addEventListener("focusout", startHeroSlider);
-productPrev.addEventListener("click", () => slideProducts(-1));
-productNext.addEventListener("click", () => slideProducts(1));
-productGrid.addEventListener("scroll", updateSliderButtons, { passive: true });
-productGrid.addEventListener("mouseenter", stopProductSlider);
-productGrid.addEventListener("mouseleave", startProductSlider);
-productGrid.addEventListener("focusin", stopProductSlider);
-productGrid.addEventListener("focusout", startProductSlider);
-window.addEventListener("resize", () => {
-  updateSliderButtons();
-  startProductSlider();
-});
-
-mobileQuery.addEventListener("change", () => {
-  productGrid.scrollTo({ left: 0 });
-  startProductSlider();
-});
 
 window.addEventListener("storage", (event) => {
   if (event.key === window.CASEFORM_STORAGE_KEY) refreshFromStorage();
