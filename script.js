@@ -13,6 +13,7 @@ const heroCopyLink = document.querySelector("#hero-copy-link");
 const heroMediaLink = document.querySelector("#hero-media-link");
 const heroPreload = document.querySelector("#hero-preload");
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
+const mobileQuery = window.matchMedia("(max-width: 720px)");
 let productSlideTimer;
 let heroSlideTimer;
 let heroSwapTimer;
@@ -224,6 +225,8 @@ function scrollToNextProduct() {
 
 function startProductSlider() {
   stopProductSlider();
+  if (mobileQuery.matches) return;
+
   productSlideTimer = window.setInterval(() => {
     if (!document.hidden) scrollToNextProduct();
   }, 4200);
@@ -277,7 +280,15 @@ productGrid.addEventListener("mouseenter", stopProductSlider);
 productGrid.addEventListener("mouseleave", startProductSlider);
 productGrid.addEventListener("focusin", stopProductSlider);
 productGrid.addEventListener("focusout", startProductSlider);
-window.addEventListener("resize", updateSliderButtons);
+window.addEventListener("resize", () => {
+  updateSliderButtons();
+  startProductSlider();
+});
+
+mobileQuery.addEventListener("change", () => {
+  productGrid.scrollTo({ left: 0 });
+  startProductSlider();
+});
 
 window.addEventListener("storage", (event) => {
   if (event.key === window.CASEFORM_STORAGE_KEY) refreshFromStorage();
