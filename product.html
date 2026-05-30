@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caseform 상품 상세</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="product-page gold-finish">
+    <header class="site-header" aria-label="상단 메뉴">
+      <nav class="nav">
+        <a class="brand" href="index.html" data-home-link data-setting="brandName">Caseform</a>
+        <div class="nav-links" aria-label="주요 메뉴">
+          <a href="index.html#collection" id="collection-link">컬렉션</a>
+          <a href="index.html#support" id="support-link">배송</a>
+          <a href="admin.html">관리자</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="product-detail-hero">
+        <div class="product-detail-visual" id="detail-media" aria-label="상품 대표 미디어">
+          <div class="case-mini product-case"></div>
+        </div>
+        <div class="product-detail-copy">
+          <p class="eyebrow">Product detail</p>
+          <h1 id="detail-name">상품명</h1>
+          <p id="detail-description">상품 설명</p>
+          <div class="detail-price-row">
+            <strong id="detail-price">0원</strong>
+            <span id="detail-material">소재</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button primary" id="back-link" href="index.html#collection">컬렉션으로 돌아가기</a>
+            <a class="button secondary" href="admin.html">관리자에서 수정</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="product-scroll-story" id="scroll-story" aria-labelledby="story-title">
+        <div class="story-shell">
+          <div class="story-visual">
+            <div class="story-stage" id="story-stage" data-scene="0">
+              <div class="story-media-card" id="story-media"></div>
+              <div class="story-glow" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div class="story-steps" id="story-steps">
+            <article class="story-step is-active" data-scene="0">
+              <p class="eyebrow">Scroll 01</p>
+              <h2 id="story-title">빛이 지나가면 마감선이 먼저 보입니다.</h2>
+              <p id="story-copy-1">사진과 화면 사이의 골드 라인이 제품을 더 선명하게 분리해 줍니다.</p>
+            </article>
+            <article class="story-step" data-scene="1">
+              <p class="eyebrow">Scroll 02</p>
+              <h2>손에 닿는 질감은 가까이서 느껴집니다.</h2>
+              <p id="story-copy-2">스크롤에 맞춰 제품이 천천히 떠오르며 소재와 컬러의 인상을 보여줍니다.</p>
+            </article>
+            <article class="story-step" data-scene="2">
+              <p class="eyebrow">Scroll 03</p>
+              <h2>상세 이미지는 판매 화면의 분위기까지 맞춥니다.</h2>
+              <p id="story-copy-3">관리자에서 등록한 이미지나 영상이 이 영역과 상단 상세 화면에 함께 반영됩니다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section detail-section" aria-labelledby="detail-title">
+        <div class="section-heading">
+          <p class="eyebrow">Why this case</p>
+          <h2 id="detail-title">손에 남는 감각을 기준으로 고르세요.</h2>
+        </div>
+        <div class="detail-grid">
+          <article>
+            <h3>그립</h3>
+            <p id="detail-grip">표면 질감과 모서리 설계로 매일 안정적으로 잡힙니다.</p>
+          </article>
+          <article>
+            <h3>보호</h3>
+            <p>카메라 주변과 모서리 충격을 고려해 일상 사용에 필요한 보호력을 갖췄습니다.</p>
+          </article>
+          <article>
+            <h3>마감</h3>
+            <p>홈페이지의 골드 마감선처럼 제품 정보와 사진이 고급스럽게 구분되도록 구성했습니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section detail-section" aria-labelledby="related-title">
+        <div class="section-heading">
+          <p class="eyebrow">More from the drop</p>
+          <h2 id="related-title">다른 케이스도 살펴보세요.</h2>
+        </div>
+        <div class="product-grid" id="related-products"></div>
+      </section>
+    </main>
+
+    <script src="site-config.js"></script>
+    <script src="product.js"></script>
+  </body>
+</html>

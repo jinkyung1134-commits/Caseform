@@ -1,0 +1,303 @@
+(function () {
+  const STORAGE_KEY = "caseform-settings";
+
+  const products = [
+    {
+      name: "Obsidian Grid",
+      material: "무광 실리콘",
+      color: "#161616",
+      price: 39000,
+      mediaType: "image",
+      image: "",
+      video: "",
+      showInHero: true,
+      description: "미세 패턴 그립과 무광 블랙으로 가장 차분하게 잡히는 기본 세팅입니다.",
+    },
+    {
+      name: "Smoke Loop",
+      material: "클리어 하드쉘",
+      color: "#8f9691",
+      price: 42000,
+      mediaType: "image",
+      image: "assets/sample-smoke-loop.png",
+      video: "",
+      showInHero: true,
+      description: "스모크 클리어 쉘과 루프 포인트로 가볍지만 확실한 존재감을 더합니다.",
+    },
+    {
+      name: "Olive Track",
+      material: "무광 실리콘",
+      color: "#4c5745",
+      price: 39000,
+      mediaType: "image",
+      image: "assets/sample-olive-track.png",
+      video: "",
+      showInHero: true,
+      description: "짙은 올리브 질감과 안정적인 그립으로 조용한 고급감을 만듭니다.",
+    },
+    {
+      name: "Taupe Tab",
+      material: "비건 레더",
+      color: "#8d5748",
+      price: 46000,
+      mediaType: "image",
+      image: "assets/sample-taupe-tab.png",
+      video: "",
+      showInHero: true,
+      description: "따뜻한 레더 질감과 탭 디테일로 가장 드레스업된 모델입니다.",
+    },
+  ];
+
+  const defaults = {
+    brandName: "Caseform",
+    pageTitle: "Caseform - 블랙&골드 프리미엄 핸드폰 케이스",
+    heroImage: "assets/hero-cases-original.png",
+    heroSlideInterval: 5,
+    heroTransitionDuration: 650,
+    heroMediaMode: "blend",
+    heroMediaDarkness: 58,
+    heroMediaFade: 72,
+    goldFinish: true,
+    colors: {
+      accent: "#d6b25e",
+      accentSoft: "#f3d891",
+      accentWarm: "#b8892f",
+    },
+    heroEyebrow: "Drop 01 / Gold Line",
+    heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
+    heroSubtitle:
+      "무광 블랙, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요.",
+    heroSpecs: ["Gold line", "39,000원부터", "오늘 주문 시 내일 출고"],
+    primaryCta: "컬렉션 보기",
+    secondaryCta: "배송 안내",
+    priceNote: "7일 교환 · 3만원 이상 무료 배송 · 블랙&골드 화면 마감",
+    collectionEyebrow: "Current drop",
+    collectionTitle: "블랙 화면 위 골드 라인, 손에는 제품의 질감.",
+    supportEyebrow: "After care",
+    supportTitle: "판매 후에도 흐릿해지지 않는 기준.",
+    products,
+  };
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function safeColor(value, fallback = "#202124") {
+    return /^#[0-9a-f]{6}$/i.test(String(value)) ? value : fallback;
+  }
+
+  function mediaSource(value) {
+    const source = String(value || "").trim();
+    if (!source) return "";
+
+    const allowedScheme = /^(https?:|data:image\/|data:video\/)/i.test(source);
+    const hasBlockedScheme = /^[a-z][a-z0-9+.-]*:/i.test(source) && !allowedScheme;
+    if (hasBlockedScheme) return "";
+
+    return source;
+  }
+
+  function productMediaKind(product) {
+    const video = mediaSource(product && product.video);
+    const image = mediaSource(product && product.image);
+
+    if (product && product.mediaType === "video" && video) return "video";
+    if (image) return "image";
+    if (video) return "video";
+    return "case";
+  }
+
+  function productHasMedia(product) {
+    return productMediaKind(product) !== "case";
+  }
+
+  function productMediaMarkup(product, options = {}) {
+    const item = product || {};
+    const mediaClass = options.mediaClass || "product-media";
+    const caseClass = options.caseClass || "";
+    const name = escapeHtml(item.name || "상품");
+    const kind = productMediaKind(item);
+
+    if (kind === "video") {
+      return `<video class="${mediaClass} product-media-video" src="${escapeHtml(mediaSource(item.video))}" autoplay muted loop playsinline></video>`;
+    }
+
+    if (kind === "image") {
+      return `<img class="${mediaClass} product-media-image" src="${escapeHtml(mediaSource(item.image))}" alt="${name} 이미지" loading="lazy" />`;
+    }
+
+    return `<div class="case-mini ${caseClass}" style="--case-color: ${safeColor(item.color)}"></div>`;
+  }
+
+  function mergeProduct(baseProduct, savedProduct) {
+    const fallback = baseProduct || products[0];
+    const saved = savedProduct || {};
+    const merged = { ...clone(fallback), ...saved };
+    merged.name = String(merged.name || fallback.name);
+    merged.material = String(merged.material || fallback.material);
+    merged.color = safeColor(merged.color, fallback.color);
+    merged.price = Number(merged.price) || Number(fallback.price) || 0;
+    merged.mediaType = merged.mediaType === "video" ? "video" : "image";
+    merged.image =
+      typeof saved.image === "string" && saved.image.trim()
+        ? saved.image
+        : typeof fallback.image === "string"
+          ? fallback.image
+          : "";
+    merged.video =
+      typeof saved.video === "string" && saved.video.trim()
+        ? saved.video
+        : typeof fallback.video === "string"
+          ? fallback.video
+          : "";
+    merged.showInHero = saved.showInHero === undefined ? Boolean(fallback.showInHero) : Boolean(saved.showInHero);
+    merged.description = String(merged.description || fallback.description);
+    return merged;
+  }
+
+  function compactForUrl(settings) {
+    const compact = clone(settings);
+
+    compact.products = compact.products.map((product) => {
+      const nextProduct = { ...product };
+      if (/^data:/i.test(nextProduct.image || "")) delete nextProduct.image;
+      if (/^data:/i.test(nextProduct.video || "")) delete nextProduct.video;
+      return nextProduct;
+    });
+
+    return compact;
+  }
+
+  function encodeSettings(settings) {
+    const json = JSON.stringify(settings);
+    const bytes = new TextEncoder().encode(json);
+    let binary = "";
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function decodeSettings(value) {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  function mergeSettings(base, saved) {
+    const merged = { ...clone(base), ...(saved || {}) };
+    const mediaModes = ["blend", "fill", "focus"];
+    merged.colors = { ...base.colors, ...(saved && saved.colors ? saved.colors : {}) };
+    if (Array.isArray(saved && saved.products)) {
+      const productCount = Math.max(base.products.length, saved.products.length);
+      merged.products = Array.from({ length: productCount }, (_, index) =>
+        mergeProduct(base.products[index] || base.products[0], saved.products[index]),
+      );
+    } else {
+      merged.products = base.products.map((product) => mergeProduct(product));
+    }
+    merged.heroSpecs =
+      Array.isArray(saved && saved.heroSpecs) && saved.heroSpecs.length
+        ? saved.heroSpecs
+        : clone(base.heroSpecs);
+    merged.heroSlideInterval = Math.min(
+      Math.max(Number(merged.heroSlideInterval) || Number(base.heroSlideInterval) || 5, 2),
+      30,
+    );
+    const heroTransitionDuration = Number(merged.heroTransitionDuration);
+    merged.heroTransitionDuration = Math.min(
+      Math.max(
+        Number.isFinite(heroTransitionDuration)
+          ? heroTransitionDuration
+          : Number(base.heroTransitionDuration) || 650,
+        150,
+      ),
+      1800,
+    );
+    merged.heroMediaMode = mediaModes.includes(merged.heroMediaMode)
+      ? merged.heroMediaMode
+      : base.heroMediaMode;
+    const heroMediaDarkness = Number(merged.heroMediaDarkness);
+    const heroMediaFade = Number(merged.heroMediaFade);
+    merged.heroMediaDarkness = Math.min(
+      Math.max(Number.isFinite(heroMediaDarkness) ? heroMediaDarkness : Number(base.heroMediaDarkness) || 58, 0),
+      90,
+    );
+    merged.heroMediaFade = Math.min(
+      Math.max(Number.isFinite(heroMediaFade) ? heroMediaFade : Number(base.heroMediaFade) || 72, 0),
+      100,
+    );
+    return merged;
+  }
+
+  function load() {
+    try {
+      const url = new URL(window.location.href);
+      const encodedSettings = url.searchParams.get("settings");
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (encodedSettings) {
+        const localSettings = mergeSettings(defaults, raw ? JSON.parse(raw) : null);
+        const fromUrl = mergeSettings(localSettings, decodeSettings(encodedSettings));
+        save(fromUrl);
+        return fromUrl;
+      }
+
+      return mergeSettings(defaults, raw ? JSON.parse(raw) : null);
+    } catch (error) {
+      console.warn("Caseform settings could not be loaded.", error);
+      return clone(defaults);
+    }
+  }
+
+  function save(settings) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergeSettings(defaults, settings)));
+  }
+
+  function reset() {
+    localStorage.removeItem(STORAGE_KEY);
+    return clone(defaults);
+  }
+
+  function urlFor(path, settings, extra = {}) {
+    const url = new URL(path, window.location.href);
+    Object.entries(extra).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
+
+    const encodedSettings = encodeSettings(compactForUrl(mergeSettings(defaults, settings)));
+    if (encodedSettings.length < 6000) {
+      url.searchParams.set("settings", encodedSettings);
+    }
+
+    return url.pathname.split("/").pop() + url.search + url.hash;
+  }
+
+  window.CASEFORM_STORAGE_KEY = STORAGE_KEY;
+  window.CASEFORM_DEFAULTS = clone(defaults);
+  window.CaseformConfig = {
+    load,
+    save,
+    reset,
+    clone,
+    mergeSettings,
+    encodeSettings,
+    decodeSettings,
+    urlFor,
+    escapeHtml,
+    safeColor,
+    mediaSource,
+    productHasMedia,
+    productMediaKind,
+    productMediaMarkup,
+  };
+})();
