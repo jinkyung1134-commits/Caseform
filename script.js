@@ -263,10 +263,21 @@ function renderCatalogPagination(pageCount) {
     return;
   }
 
+  const pageButtons = Array.from(
+    { length: pageCount },
+    (_, index) => `
+      <button
+        class="catalog-page-number ${index === activeCatalogPage ? "is-active" : ""}"
+        type="button"
+        data-page-index="${index}"
+        ${index === activeCatalogPage ? 'aria-current="page"' : ""}
+      >${index + 1}</button>
+    `,
+  ).join("");
+
   catalogPagination.innerHTML = `
-    <button type="button" data-page-action="prev" ${activeCatalogPage === 0 ? "disabled" : ""}>이전</button>
-    <span>${activeCatalogPage + 1} / ${pageCount}</span>
-    <button type="button" data-page-action="next" ${activeCatalogPage >= pageCount - 1 ? "disabled" : ""}>다음</button>
+    ${pageButtons}
+    <button class="catalog-page-next" type="button" data-page-action="next" aria-label="다음 상품 페이지" ${activeCatalogPage >= pageCount - 1 ? "disabled" : ""}>›</button>
   `;
 }
 
@@ -301,9 +312,14 @@ hero.addEventListener("pointercancel", cancelHeroSwipe);
 hero.addEventListener("click", preventHeroSwipeClick, true);
 
 catalogPagination.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-page-action]");
-  if (!button) return;
-  activeCatalogPage += button.dataset.pageAction === "next" ? 1 : -1;
+  const pageButton = event.target.closest("[data-page-index]");
+  const actionButton = event.target.closest("[data-page-action]");
+  if (!pageButton && !actionButton) return;
+
+  activeCatalogPage = pageButton
+    ? Number(pageButton.dataset.pageIndex)
+    : activeCatalogPage + (actionButton.dataset.pageAction === "next" ? 1 : -1);
+
   renderProducts();
   document.querySelector("#collection").scrollIntoView({ behavior: "smooth", block: "start" });
 });
