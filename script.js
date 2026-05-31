@@ -4,6 +4,7 @@ let settings = window.CaseformConfig.load();
 let products = settings.products;
 
 const productGrid = document.querySelector("#product-grid");
+const catalogPagination = document.querySelector("#catalog-pagination");
 const hero = document.querySelector(".hero");
 const heroTitle = document.querySelector("#hero-title");
 const heroSubtitle = document.querySelector("#hero-subtitle");
@@ -11,9 +12,11 @@ const heroCopyLink = document.querySelector("#hero-copy-link");
 const heroMediaLink = document.querySelector("#hero-media-link");
 const heroPreload = document.querySelector("#hero-preload");
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
+const catalogMobileQuery = window.matchMedia("(max-width: 720px)");
 let heroSlideTimer;
 let heroSwapTimer;
 let activeHeroSlide = 0;
+let activeCatalogPage = 0;
 
 function setText(key, value) {
   document.querySelectorAll(`[data-setting="${key}"]`).forEach((node) => {
@@ -173,9 +176,17 @@ function stopHeroSlider() {
 }
 
 function renderProducts() {
-  productGrid.innerHTML = products
+  const pageSize = catalogMobileQuery.matches ? 10 : 20;
+  const pageCount = Math.max(1, Math.ceil(products.length / pageSize));
+  activeCatalogPage = Math.max(0, Math.min(activeCatalogPage, pageCount - 1));
+  const start = activeCatalogPage * pageSize;
+  const visibleProducts = products.slice(start, start + pageSize);
+
+  productGrid.innerHTML = visibleProducts
     .map(
-      (product, index) => `
+      (product, visibleIndex) => {
+        const index = start + visibleIndex;
+        return `
         <a class="product-card catalog-card" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
           <span class="product-visual catalog-visual${productHasMedia(product) ? " has-product-media" : ""}">
             ${productMediaMarkup(product, { mediaClass: "product-media product-card-media" })}
@@ -187,9 +198,27 @@ function renderProducts() {
             <strong>${formatWon(product.price)}</strong>
           </div>
         </a>
-      `,
+      `;
+      },
     )
     .join("");
+
+  renderCatalogPagination(pageCount);
+}
+
+function renderCatalogPagination(pageCount) {
+  if (!catalogPagination) return;
+
+  if (pageCount <= 1) {
+    catalogPagination.innerHTML = "";
+    return;
+  }
+
+  catalogPagination.innerHTML = `
+    <button type="button" data-page-action="prev" ${activeCatalogPage === 0 ? "disabled" : ""}>이전</button>
+    <span>${activeCatalogPage + 1} / ${pageCount}</span>
+    <button type="button" data-page-action="next" ${activeCatalogPage >= pageCount - 1 ? "disabled" : ""}>다음</button>
+  `;
 }
 
 function refreshFromStorage() {
@@ -199,6 +228,7 @@ function refreshFromStorage() {
   settings = nextSettings;
   products = settings.products;
   activeHeroSlide = 0;
+  activeCatalogPage = 0;
   applySettings();
   renderProducts();
 }
@@ -216,6 +246,19 @@ hero.addEventListener("mouseenter", stopHeroSlider);
 hero.addEventListener("mouseleave", startHeroSlider);
 hero.addEventListener("focusin", stopHeroSlider);
 hero.addEventListener("focusout", startHeroSlider);
+
+catalogPagination.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-page-action]");
+  if (!button) return;
+  activeCatalogPage += button.dataset.pageAction === "next" ? 1 : -1;
+  renderProducts();
+  document.querySelector("#collection").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+catalogMobileQuery.addEventListener("change", () => {
+  activeCatalogPage = 0;
+  renderProducts();
+});
 
 window.addEventListener("storage", (event) => {
   if (event.key === window.CASEFORM_STORAGE_KEY) refreshFromStorage();
