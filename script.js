@@ -176,13 +176,12 @@ function renderProducts() {
   productGrid.innerHTML = products
     .map(
       (product, index) => `
-        <a class="product-card" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
-          <span class="product-visual${productHasMedia(product) ? " has-product-media" : ""}">
+        <a class="product-card catalog-card" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
+          <span class="product-visual catalog-visual${productHasMedia(product) ? " has-product-media" : ""}">
             ${productMediaMarkup(product, { mediaClass: "product-media product-card-media" })}
           </span>
-          <div>
+          <div class="catalog-copy">
             <h3>${escapeHtml(product.name)}</h3>
-            <p>${escapeHtml(product.description)}</p>
           </div>
           <div class="product-meta">
             <strong>${formatWon(product.price)}</strong>
