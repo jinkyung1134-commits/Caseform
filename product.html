@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Caseform 상품 상세</title>
-    <link rel="stylesheet" href="styles.css?v=20260601-view-all-link" />
+    <link rel="stylesheet" href="styles.css?v=20260601-product-flow-2" />
   </head>
   <body class="product-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -36,14 +36,7 @@
           <p class="eyebrow">Product detail</p>
           <h1 id="detail-name">상품명</h1>
           <p id="detail-description">상품 설명</p>
-          <div class="detail-price-row">
-            <strong id="detail-price">0원</strong>
-            <span id="detail-material">소재</span>
-          </div>
-          <div class="hero-actions">
-            <a class="button primary" id="back-link" href="index.html#collection">컬렉션으로 돌아가기</a>
-            <a class="button secondary" href="admin.html">관리자에서 수정</a>
-          </div>
+          <button class="button primary product-jump-button" id="jump-purchase" type="button">구매하기</button>
         </div>
       </section>
 
@@ -75,37 +68,53 @@
         </div>
       </section>
 
-      <section class="section detail-section" aria-labelledby="detail-title">
-        <div class="section-heading">
-          <p class="eyebrow">Why this case</p>
-          <h2 id="detail-title">손에 남는 감각을 기준으로 고르세요.</h2>
-        </div>
-        <div class="detail-grid">
-          <article>
-            <h3>그립</h3>
-            <p id="detail-grip">표면 질감과 모서리 설계로 매일 안정적으로 잡힙니다.</p>
-          </article>
-          <article>
-            <h3>보호</h3>
-            <p>카메라 주변과 모서리 충격을 고려해 일상 사용에 필요한 보호력을 갖췄습니다.</p>
-          </article>
-          <article>
-            <h3>마감</h3>
-            <p>홈페이지의 골드 마감선처럼 제품 정보와 사진이 고급스럽게 구분되도록 구성했습니다.</p>
-          </article>
+      <section class="section product-buy-section" id="purchase-section" aria-labelledby="purchase-title">
+        <div class="purchase-showcase">
+          <div class="purchase-media" id="purchase-media" aria-label="구매 상품 이미지"></div>
+          <div class="purchase-panel">
+            <p class="eyebrow">Select device</p>
+            <h2 id="purchase-title">기종을 선택하세요.</h2>
+            <p id="purchase-summary">선택한 상품과 기종을 확인한 뒤 장바구니 또는 구매를 진행하세요.</p>
+            <div class="purchase-product-line">
+              <strong id="purchase-name">상품명</strong>
+              <span id="purchase-price">0원</span>
+            </div>
+            <label class="device-select-field">
+              <span>핸드폰 기종</span>
+              <select id="device-select">
+                <option>iPhone 16 Pro</option>
+                <option>iPhone 16</option>
+                <option>iPhone 15 Pro</option>
+                <option>iPhone 15</option>
+                <option>iPhone 14 Pro</option>
+                <option>iPhone 14</option>
+                <option>Galaxy S25</option>
+                <option>Galaxy S24</option>
+              </select>
+            </label>
+            <div class="purchase-actions">
+              <button class="button secondary" id="cart-action" type="button">장바구니</button>
+              <button class="button primary" id="buy-action" type="button">구매</button>
+            </div>
+            <p class="purchase-status" id="purchase-status" aria-live="polite"></p>
+          </div>
         </div>
       </section>
 
-      <section class="section detail-section" aria-labelledby="related-title">
+      <section class="section detail-section related-slider-section" aria-labelledby="related-title">
         <div class="section-heading">
           <p class="eyebrow">More from the drop</p>
           <h2 id="related-title">다른 케이스도 살펴보세요.</h2>
         </div>
-        <div class="product-grid" id="related-products"></div>
+        <div class="related-slider-shell">
+          <button class="related-arrow related-prev" type="button" data-related-action="prev" aria-label="이전 관련 상품">‹</button>
+          <div class="related-products-track" id="related-products" tabindex="0" aria-label="관련 상품 슬라이더"></div>
+          <button class="related-arrow related-next" type="button" data-related-action="next" aria-label="다음 관련 상품">›</button>
+        </div>
       </section>
     </main>
 
-    <script src="site-config.js?v=20260601-view-all-link"></script>
-    <script src="product.js?v=20260601-view-all-link"></script>
+    <script src="site-config.js?v=20260601-product-flow-2"></script>
+    <script src="product.js?v=20260601-product-flow-2"></script>
   </body>
 </html>
