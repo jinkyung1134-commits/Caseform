@@ -10,7 +10,10 @@ const heroTitle = document.querySelector("#hero-title");
 const heroSubtitle = document.querySelector("#hero-subtitle");
 const heroCopyLink = document.querySelector("#hero-copy-link");
 const heroMediaLink = document.querySelector("#hero-media-link");
+const heroMobileProductLink = document.querySelector("#hero-mobile-product-link");
 const heroPreload = document.querySelector("#hero-preload");
+const siteHeader = document.querySelector(".site-header");
+const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
 const catalogMobileQuery = window.matchMedia("(max-width: 720px)");
 let heroSlideTimer;
@@ -147,6 +150,10 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
       heroSubtitle.textContent = product.description;
       heroCopyLink.href = detailUrl;
       heroCopyLink.setAttribute("aria-label", `${product.name} 상세페이지로 이동`);
+      if (heroMobileProductLink) {
+        heroMobileProductLink.href = detailUrl;
+        heroMobileProductLink.setAttribute("aria-label", `${product.name} 상품 보기`);
+      }
       heroMediaLink.href = detailUrl;
       heroMediaLink.dataset.mediaMode = settings.heroMediaMode || "blend";
       heroMediaLink.classList.toggle("has-product-media", productHasMedia(product));
@@ -310,6 +317,22 @@ hero.addEventListener("pointerdown", startHeroSwipe);
 hero.addEventListener("pointerup", finishHeroSwipe);
 hero.addEventListener("pointercancel", cancelHeroSwipe);
 hero.addEventListener("click", preventHeroSwipeClick, true);
+
+if (mobileMenuButton && siteHeader) {
+  mobileMenuButton.addEventListener("click", () => {
+    const isOpen = siteHeader.classList.toggle("is-menu-open");
+    mobileMenuButton.setAttribute("aria-expanded", String(isOpen));
+    mobileMenuButton.setAttribute("aria-label", isOpen ? "메뉴 닫기" : "메뉴 열기");
+  });
+
+  siteHeader.querySelectorAll(".nav-links a").forEach((link) => {
+    link.addEventListener("click", () => {
+      siteHeader.classList.remove("is-menu-open");
+      mobileMenuButton.setAttribute("aria-expanded", "false");
+      mobileMenuButton.setAttribute("aria-label", "메뉴 열기");
+    });
+  });
+}
 
 catalogPagination.addEventListener("click", (event) => {
   const pageButton = event.target.closest("[data-page-index]");

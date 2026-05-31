@@ -9,18 +9,40 @@
       content="Caseform의 프리미엄 핸드폰 케이스 컬렉션. 얇고 선명한 디자인, 일상에 필요한 보호력, 취향에 맞춘 커스텀 옵션."
     />
     <link id="hero-preload" rel="preload" as="image" href="assets/hero-cases-original.png" />
-    <link rel="stylesheet" href="styles.css?v=20260531-number-pagination" />
+    <link rel="stylesheet" href="styles.css?v=20260601-mobile-luxe" />
   </head>
-  <body>
+  <body class="home-page">
     <header class="site-header" aria-label="상단 메뉴">
       <nav class="nav">
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <a class="brand" href="#top" aria-label="Caseform 홈" data-setting="brandName">Caseform</a>
         <div class="nav-links" aria-label="주요 메뉴">
           <a href="#collection">컬렉션</a>
           <a href="#support">배송</a>
           <a href="admin.html">관리자</a>
         </div>
+        <div class="mobile-nav-actions" aria-label="모바일 빠른 메뉴">
+          <a class="mobile-icon-button is-search" href="#collection" aria-label="상품 검색">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m16.5 16.5 4 4"></path>
+            </svg>
+          </a>
+          <a class="mobile-icon-button is-bag" href="#collection" aria-label="상품 목록">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M6 8h12l-1 12H7L6 8Z"></path>
+              <path d="M9 8a3 3 0 0 1 6 0"></path>
+            </svg>
+          </a>
+        </div>
       </nav>
+      <a class="mobile-search-pill" href="#collection" aria-label="상품 검색으로 이동">
+        <span>"아이폰 케이스를 검색해보세요."</span>
+      </a>
     </header>
 
     <main id="top">
@@ -35,6 +57,10 @@
         <a class="hero-media" id="hero-media-link" href="product.html?id=0" aria-label="현재 상품 상세페이지로 이동">
           <img id="hero-image" src="assets/hero-cases-original.png" alt="다섯 가지 색상의 Caseform 핸드폰 케이스 제품 렌더" />
         </a>
+        <div class="hero-mobile-actions" aria-label="모바일 주요 이동">
+          <a id="hero-mobile-product-link" href="product.html?id=0">상품 보기</a>
+          <a href="#collection">전체 상품 보기</a>
+        </div>
         <div class="hero-slide-dots" id="hero-slide-dots" aria-label="메인 상품 슬라이드 위치"></div>
       </section>
 
@@ -69,7 +95,7 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260531-number-pagination"></script>
-    <script src="script.js?v=20260531-number-pagination"></script>
+    <script src="site-config.js?v=20260601-mobile-luxe"></script>
+    <script src="script.js?v=20260601-mobile-luxe"></script>
   </body>
 </html>
