@@ -4,13 +4,14 @@ let settings = window.CaseformConfig.load();
 let products = settings.products;
 
 const productGrid = document.querySelector("#product-grid");
-const catalogPagination = document.querySelector("#catalog-pagination");
 const hero = document.querySelector(".hero");
 const heroTitle = document.querySelector("#hero-title");
 const heroSubtitle = document.querySelector("#hero-subtitle");
 const heroCopyLink = document.querySelector("#hero-copy-link");
 const heroMediaLink = document.querySelector("#hero-media-link");
 const heroMobileProductLink = document.querySelector("#hero-mobile-product-link");
+const heroMobileAllLink = document.querySelector("#hero-mobile-all-link");
+const collectionViewAllLink = document.querySelector("#collection-view-all");
 const heroPreload = document.querySelector("#hero-preload");
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
@@ -19,7 +20,6 @@ const catalogMobileQuery = window.matchMedia("(max-width: 720px)");
 let heroSlideTimer;
 let heroSwapTimer;
 let activeHeroSlide = 0;
-let activeCatalogPage = 0;
 let heroSwipePointerId = null;
 let heroSwipeStartX = 0;
 let heroSwipeStartY = 0;
@@ -33,6 +33,10 @@ function setText(key, value) {
 
 function productUrl(index) {
   return window.CaseformConfig.urlFor("product.html", settings, { id: String(index) });
+}
+
+function productsUrl() {
+  return window.CaseformConfig.urlFor("products.html", settings);
 }
 
 function heroSlideItems() {
@@ -111,6 +115,16 @@ function applySettings() {
   document.querySelectorAll("[data-home-link]").forEach((link) => {
     link.href = window.CaseformConfig.urlFor("index.html", settings);
   });
+  document.querySelectorAll("[data-products-link]").forEach((link) => {
+    link.href = productsUrl();
+  });
+
+  if (collectionViewAllLink) {
+    collectionViewAllLink.href = productsUrl();
+  }
+  if (heroMobileAllLink) {
+    heroMobileAllLink.href = productsUrl();
+  }
 
   renderHeroSlide(activeHeroSlide, true);
   startHeroSlider();
@@ -232,18 +246,13 @@ function preventHeroSwipeClick(event) {
 }
 
 function renderProducts() {
-  const pageSize = catalogMobileQuery.matches ? 10 : 20;
-  const pageCount = Math.max(1, Math.ceil(products.length / pageSize));
-  activeCatalogPage = Math.max(0, Math.min(activeCatalogPage, pageCount - 1));
-  const start = activeCatalogPage * pageSize;
-  const visibleProducts = products.slice(start, start + pageSize);
+  const previewCount = catalogMobileQuery.matches ? 4 : 8;
+  const visibleProducts = products.slice(0, previewCount);
 
   productGrid.innerHTML = visibleProducts
     .map(
-      (product, visibleIndex) => {
-        const index = start + visibleIndex;
-        return `
-        <a class="product-card catalog-card" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동">
+      (product, index) => `
+        <a class="product-card catalog-card reveal-on-scroll" href="${productUrl(index)}" aria-label="${escapeHtml(product.name)} 상세페이지로 이동" style="--reveal-delay: ${(index % 4) * 70}ms">
           <span class="product-visual catalog-visual${productHasMedia(product) ? " has-product-media" : ""}">
             ${productMediaMarkup(product, { mediaClass: "product-media product-card-media" })}
           </span>
@@ -254,38 +263,11 @@ function renderProducts() {
             <strong>${formatWon(product.price)}</strong>
           </div>
         </a>
-      `;
-      },
+      `,
     )
     .join("");
 
-  renderCatalogPagination(pageCount);
-}
-
-function renderCatalogPagination(pageCount) {
-  if (!catalogPagination) return;
-
-  if (pageCount <= 1) {
-    catalogPagination.innerHTML = "";
-    return;
-  }
-
-  const pageButtons = Array.from(
-    { length: pageCount },
-    (_, index) => `
-      <button
-        class="catalog-page-number ${index === activeCatalogPage ? "is-active" : ""}"
-        type="button"
-        data-page-index="${index}"
-        ${index === activeCatalogPage ? 'aria-current="page"' : ""}
-      >${index + 1}</button>
-    `,
-  ).join("");
-
-  catalogPagination.innerHTML = `
-    ${pageButtons}
-    <button class="catalog-page-next" type="button" data-page-action="next" aria-label="다음 상품 페이지" ${activeCatalogPage >= pageCount - 1 ? "disabled" : ""}>›</button>
-  `;
+  setupRevealAnimations();
 }
 
 function refreshFromStorage() {
@@ -295,9 +277,30 @@ function refreshFromStorage() {
   settings = nextSettings;
   products = settings.products;
   activeHeroSlide = 0;
-  activeCatalogPage = 0;
   applySettings();
   renderProducts();
+}
+
+function setupRevealAnimations() {
+  const targets = document.querySelectorAll(".collection-section .reveal-on-scroll");
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach((target) => target.classList.add("is-revealed"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-revealed");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -10% 0px" },
+  );
+
+  targets.forEach((target) => observer.observe(target));
 }
 
 applySettings();
@@ -334,21 +337,7 @@ if (mobileMenuButton && siteHeader) {
   });
 }
 
-catalogPagination.addEventListener("click", (event) => {
-  const pageButton = event.target.closest("[data-page-index]");
-  const actionButton = event.target.closest("[data-page-action]");
-  if (!pageButton && !actionButton) return;
-
-  activeCatalogPage = pageButton
-    ? Number(pageButton.dataset.pageIndex)
-    : activeCatalogPage + (actionButton.dataset.pageAction === "next" ? 1 : -1);
-
-  renderProducts();
-  document.querySelector("#collection").scrollIntoView({ behavior: "smooth", block: "start" });
-});
-
 catalogMobileQuery.addEventListener("change", () => {
-  activeCatalogPage = 0;
   renderProducts();
 });
 

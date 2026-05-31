@@ -33,6 +33,10 @@ function indexUrl(hash = "") {
   return `${url}${hash}`;
 }
 
+function productsUrl() {
+  return window.CaseformConfig.urlFor("products.html", settings);
+}
+
 function renderProductMedia(target, options = {}) {
   target.classList.toggle("has-product-media", productHasMedia(product));
   target.innerHTML = productMediaMarkup(product, {
@@ -59,7 +63,7 @@ function renderDetail() {
     ? "관리자에서 등록한 대표 미디어가 카드, 상세 상단, 스크롤 쇼케이스에 같은 톤으로 반영됩니다."
     : "관리자에서 상품 이미지나 영상을 등록하면 이 영역이 실제 미디어 쇼케이스로 바뀝니다.";
   document.querySelector("#back-link").href = indexUrl("#collection");
-  document.querySelector("#collection-link").href = indexUrl("#collection");
+  document.querySelector("#collection-link").href = productsUrl();
   document.querySelector("#support-link").href = indexUrl("#support");
   document.querySelector("[data-home-link]").href = indexUrl("");
 }

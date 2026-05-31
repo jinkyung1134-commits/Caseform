@@ -9,7 +9,7 @@
       content="Caseform의 프리미엄 핸드폰 케이스 컬렉션. 얇고 선명한 디자인, 일상에 필요한 보호력, 취향에 맞춘 커스텀 옵션."
     />
     <link id="hero-preload" rel="preload" as="image" href="assets/hero-cases-original.png" />
-    <link rel="stylesheet" href="styles.css?v=20260601-unified-header" />
+    <link rel="stylesheet" href="styles.css?v=20260601-view-all" />
   </head>
   <body class="home-page">
     <header class="site-header" aria-label="상단 메뉴">
@@ -21,7 +21,7 @@
         </button>
         <a class="brand" href="#top" aria-label="Caseform 홈" data-setting="brandName">Caseform</a>
         <div class="nav-links" aria-label="주요 메뉴">
-          <a href="#collection">컬렉션</a>
+          <a href="products.html" data-products-link>컬렉션</a>
           <a href="#support">배송</a>
           <a href="admin.html">관리자</a>
         </div>
@@ -46,7 +46,7 @@
         </a>
         <div class="hero-mobile-actions" aria-label="모바일 주요 이동">
           <a id="hero-mobile-product-link" href="product.html?id=0">상품 보기</a>
-          <a href="#collection">전체 상품 보기</a>
+          <a id="hero-mobile-all-link" href="products.html">전체 상품 보기</a>
         </div>
         <div class="hero-slide-dots" id="hero-slide-dots" aria-label="메인 상품 슬라이드 위치"></div>
       </section>
@@ -56,8 +56,10 @@
           <p class="eyebrow" data-setting="collectionEyebrow">Current drop</p>
           <h2 id="collection-title" data-setting="collectionTitle">색보다 먼저 고르는 건 손에 남는 감각.</h2>
         </div>
-        <div class="product-grid" id="product-grid"></div>
-        <div class="catalog-pagination" id="catalog-pagination" aria-label="상품 목록 페이지"></div>
+        <div class="product-grid home-product-grid" id="product-grid"></div>
+        <div class="collection-view-all-wrap">
+          <a class="collection-view-all" id="collection-view-all" href="products.html">View all</a>
+        </div>
       </section>
 
       <section class="section service-section" id="support" aria-label="배송 및 서비스">
@@ -82,7 +84,7 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260601-unified-header"></script>
-    <script src="script.js?v=20260601-unified-header"></script>
+    <script src="site-config.js?v=20260601-view-all"></script>
+    <script src="script.js?v=20260601-view-all"></script>
   </body>
 </html>
