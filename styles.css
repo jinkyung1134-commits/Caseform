@@ -1285,46 +1285,29 @@ legend,
 }
 
 .product-detail-visual {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   isolation: isolate;
-  display: grid;
-  width: min(84vw, 980px);
-  height: min(78svh, 760px);
-  min-height: 560px;
-  place-items: center;
-  overflow: visible;
-  background: transparent;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #050506;
+  pointer-events: none;
 }
 
 .product-detail-visual::before {
-  content: "";
-  position: absolute;
-  inset: 8% 6% 4%;
-  z-index: 0;
-  background: linear-gradient(90deg, transparent, rgba(214, 178, 94, 0.12) 48%, transparent);
-  filter: blur(36px);
-  opacity: 0.82;
+  display: none;
 }
 
 .product-detail-visual::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  bottom: 7%;
-  left: 50%;
-  width: min(640px, 72vw);
-  height: 1px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(243, 216, 145, 0.58), transparent);
-  box-shadow:
-    0 20px 70px rgba(214, 178, 94, 0.26),
-    0 36px 110px rgba(0, 0, 0, 0.72);
-  transform: translateX(-50%);
+  display: none;
 }
 
 .product-detail-visual.has-product-media {
-  background: transparent;
+  background: #050506;
 }
 
 .product-detail-visual.has-spin-video {
@@ -1332,12 +1315,21 @@ legend,
 }
 
 .product-detail-media {
-  position: relative;
-  z-index: 2;
-  width: min(86vw, 780px);
-  height: min(76svh, 740px);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   padding: 0;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.product-hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% center;
 }
 
 .product-spin-media {
@@ -1997,9 +1989,10 @@ legend,
   }
 
   .product-detail-visual {
-    width: min(100%, 760px);
-    height: min(72svh, 680px);
-    min-height: 480px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     border: 0;
   }
 
@@ -2458,8 +2451,12 @@ legend,
   }
 
   .product-detail-media {
-    width: min(100vw, 560px);
-    height: min(64svh, 580px);
+    width: 100%;
+    height: 100%;
+  }
+
+  .product-hero-video {
+    object-position: 58% center;
   }
 
   .product-spin-media {
