@@ -806,32 +806,30 @@ body:not(.gold-finish) .hero-media::before {
 .collection-view-all-wrap {
   display: flex;
   width: min(1180px, 100%);
-  margin: clamp(42px, 5vw, 64px) auto 0;
+  margin: clamp(36px, 4vw, 54px) auto 0;
   justify-content: center;
 }
 
 .collection-view-all {
   display: inline-flex;
-  min-width: 112px;
-  min-height: 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--gold-soft), transparent 58%);
-  border-radius: var(--radius);
-  padding: 0 24px;
-  background: color-mix(in srgb, var(--gold), transparent 12%);
-  color: #100d07;
-  font-size: 13px;
-  font-weight: 800;
+  border-bottom: 1px solid currentColor;
+  padding: 0 0 5px;
+  color: var(--gold-soft);
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: 0;
   transition:
+    color 180ms ease,
     transform 180ms ease,
-    background 180ms ease;
+    opacity 180ms ease;
 }
 
 .collection-view-all:hover {
-  background: var(--gold-soft);
-  transform: translateY(-2px);
+  color: #fff;
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 .catalog-page-section {
