@@ -17,6 +17,10 @@ let heroSlideTimer;
 let heroSwapTimer;
 let activeHeroSlide = 0;
 let activeCatalogPage = 0;
+let heroSwipePointerId = null;
+let heroSwipeStartX = 0;
+let heroSwipeStartY = 0;
+let heroSwipeBlockClick = false;
 
 function setText(key, value) {
   document.querySelectorAll(`[data-setting="${key}"]`).forEach((node) => {
@@ -175,6 +179,51 @@ function stopHeroSlider() {
   }
 }
 
+function startHeroSwipe(event) {
+  if (!catalogMobileQuery.matches || event.pointerType === "mouse" || event.isPrimary === false) return;
+
+  heroSwipePointerId = event.pointerId;
+  heroSwipeStartX = event.clientX;
+  heroSwipeStartY = event.clientY;
+  stopHeroSlider();
+
+  if (hero.setPointerCapture) {
+    hero.setPointerCapture(event.pointerId);
+  }
+}
+
+function finishHeroSwipe(event) {
+  if (heroSwipePointerId !== event.pointerId) return;
+
+  const deltaX = event.clientX - heroSwipeStartX;
+  const deltaY = event.clientY - heroSwipeStartY;
+  const isHorizontalSwipe = Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25;
+
+  heroSwipePointerId = null;
+
+  if (isHorizontalSwipe) {
+    heroSwipeBlockClick = true;
+    renderHeroSlide(activeHeroSlide + (deltaX < 0 ? 1 : -1));
+    window.setTimeout(() => {
+      heroSwipeBlockClick = false;
+    }, 360);
+  }
+
+  startHeroSlider();
+}
+
+function cancelHeroSwipe(event) {
+  if (heroSwipePointerId !== event.pointerId) return;
+  heroSwipePointerId = null;
+  startHeroSlider();
+}
+
+function preventHeroSwipeClick(event) {
+  if (!heroSwipeBlockClick) return;
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function renderProducts() {
   const pageSize = catalogMobileQuery.matches ? 10 : 20;
   const pageCount = Math.max(1, Math.ceil(products.length / pageSize));
@@ -246,6 +295,10 @@ hero.addEventListener("mouseenter", stopHeroSlider);
 hero.addEventListener("mouseleave", startHeroSlider);
 hero.addEventListener("focusin", stopHeroSlider);
 hero.addEventListener("focusout", startHeroSlider);
+hero.addEventListener("pointerdown", startHeroSwipe);
+hero.addEventListener("pointerup", finishHeroSwipe);
+hero.addEventListener("pointercancel", cancelHeroSwipe);
+hero.addEventListener("click", preventHeroSwipeClick, true);
 
 catalogPagination.addEventListener("click", (event) => {
   const button = event.target.closest("[data-page-action]");

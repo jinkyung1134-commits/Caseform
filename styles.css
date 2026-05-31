@@ -1548,6 +1548,7 @@ legend,
     min-height: 650px;
     padding: 340px 20px 98px;
     align-items: start;
+    touch-action: pan-y;
   }
 
   h1 {
