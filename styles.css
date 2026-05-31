@@ -611,34 +611,6 @@ body:not(.gold-finish) .hero-media::before {
   white-space: nowrap;
 }
 
-.product-meta span {
-  color: var(--gold);
-  font-size: 30px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.detail-arrow {
-  display: inline-grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--gold-soft), transparent 48%);
-  border-radius: 50%;
-  background: rgba(214, 178, 94, 0.08);
-  box-shadow: 0 0 18px rgba(214, 178, 94, 0.14);
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease;
-}
-
-.product-card:hover .detail-arrow {
-  border-color: var(--gold-soft);
-  background: rgba(214, 178, 94, 0.16);
-  transform: translateX(2px);
-}
-
 .studio-section {
   background: #050506;
 }

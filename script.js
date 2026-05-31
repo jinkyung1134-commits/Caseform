@@ -186,7 +186,6 @@ function renderProducts() {
           </div>
           <div class="product-meta">
             <strong>${formatWon(product.price)}</strong>
-            <span class="detail-arrow" aria-hidden="true">→</span>
           </div>
         </a>
       `,
