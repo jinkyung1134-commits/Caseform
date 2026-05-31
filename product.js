@@ -4,6 +4,8 @@ const params = new URLSearchParams(window.location.search);
 const selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
 const product = products[selectedIndex] || products[0];
 const { escapeHtml, productHasMedia, productMediaMarkup } = window.CaseformConfig;
+const siteHeader = document.querySelector(".site-header");
+const mobileMenuButton = document.querySelector("#mobile-menu-button");
 
 function formatWon(value) {
   return `${Number(value).toLocaleString("ko-KR")}원`;
@@ -148,8 +150,27 @@ function setupRevealAnimations() {
   });
 }
 
+function setupHeaderMenu() {
+  if (!mobileMenuButton || !siteHeader) return;
+
+  mobileMenuButton.addEventListener("click", () => {
+    const isOpen = siteHeader.classList.toggle("is-menu-open");
+    mobileMenuButton.setAttribute("aria-expanded", String(isOpen));
+    mobileMenuButton.setAttribute("aria-label", isOpen ? "메뉴 닫기" : "메뉴 열기");
+  });
+
+  siteHeader.querySelectorAll(".nav-links a").forEach((link) => {
+    link.addEventListener("click", () => {
+      siteHeader.classList.remove("is-menu-open");
+      mobileMenuButton.setAttribute("aria-expanded", "false");
+      mobileMenuButton.setAttribute("aria-label", "메뉴 열기");
+    });
+  });
+}
+
 applyTheme();
 renderDetail();
 renderRelated();
+setupHeaderMenu();
 setupScrollStory();
 setupRevealAnimations();

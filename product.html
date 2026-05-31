@@ -4,16 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Caseform 상품 상세</title>
-    <link rel="stylesheet" href="styles.css?v=20260601-mobile-luxe" />
+    <link rel="stylesheet" href="styles.css?v=20260601-unified-header" />
   </head>
   <body class="product-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
       <nav class="nav">
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <a class="brand" href="index.html" data-home-link data-setting="brandName">Caseform</a>
         <div class="nav-links" aria-label="주요 메뉴">
           <a href="index.html#collection" id="collection-link">컬렉션</a>
           <a href="index.html#support" id="support-link">배송</a>
           <a href="admin.html">관리자</a>
+        </div>
+        <div class="mobile-nav-actions" aria-label="빠른 메뉴">
+          <button class="mobile-icon-button is-account" type="button" aria-label="마이페이지"></button>
+          <button class="mobile-icon-button is-bag" type="button" aria-label="장바구니"></button>
         </div>
       </nav>
     </header>
@@ -96,7 +105,7 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260601-mobile-luxe"></script>
-    <script src="product.js?v=20260601-mobile-luxe"></script>
+    <script src="site-config.js?v=20260601-unified-header"></script>
+    <script src="product.js?v=20260601-unified-header"></script>
   </body>
 </html>
