@@ -3,7 +3,8 @@ const products = settings.products;
 const params = new URLSearchParams(window.location.search);
 const selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
 const product = products[selectedIndex] || products[0];
-const { escapeHtml, productHasMedia, productMediaMarkup } = window.CaseformConfig;
+const { escapeHtml, mediaSource, productHasMedia, productMediaMarkup } = window.CaseformConfig;
+const detailSampleVideo = "assets/sample-case-360.webm";
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const jumpPurchaseButton = document.querySelector("#jump-purchase");
@@ -50,9 +51,27 @@ function renderProductMedia(target, options = {}) {
   });
 }
 
+function renderDetailHeroMedia(target) {
+  const source = mediaSource(detailSampleVideo);
+  target.classList.add("has-product-media", "has-spin-video");
+  target.innerHTML = `
+    <video
+      class="product-media product-detail-media product-spin-video"
+      src="${escapeHtml(source)}"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      aria-label="${escapeHtml(product.name)} 360도 회전 샘플 영상"
+    ></video>
+  `;
+  target.querySelector("video")?.play().catch(() => {});
+}
+
 function renderDetail() {
   document.title = `${product.name} - ${settings.brandName}`;
-  renderProductMedia(document.querySelector("#detail-media"));
+  renderDetailHeroMedia(document.querySelector("#detail-media"));
   renderProductMedia(document.querySelector("#purchase-media"), {
     mediaClass: "product-media purchase-product-media",
     caseClass: "product-case purchase-product-case",

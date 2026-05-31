@@ -1292,11 +1292,24 @@ legend,
     #090909;
 }
 
+.product-detail-visual.has-spin-video {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(214, 178, 94, 0.16), transparent 52%),
+    #050506;
+}
+
 .product-detail-media {
   width: min(88%, 520px);
   height: min(76svh, 560px);
   padding: 18px;
   object-fit: contain;
+}
+
+.product-spin-video {
+  width: min(94%, 620px);
+  height: min(76svh, 620px);
+  padding: 0;
+  filter: drop-shadow(0 30px 48px rgba(0, 0, 0, 0.46));
 }
 
 .product-case {
