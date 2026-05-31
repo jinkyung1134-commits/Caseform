@@ -81,7 +81,6 @@ function renderDetail() {
     caseClass: "product-case story-product-case",
   });
   document.querySelector("#detail-name").textContent = product.name;
-  document.querySelector("#detail-description").textContent = product.description;
   document.querySelector("#purchase-name").textContent = product.name;
   document.querySelector("#purchase-price").textContent = formatWon(product.price);
   document.querySelector("#purchase-summary").textContent =
