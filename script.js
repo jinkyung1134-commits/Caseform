@@ -81,7 +81,7 @@ function heroMediaContentMarkup(product) {
 }
 
 function useStaticHeroImage() {
-  return true;
+  return false;
 }
 
 function staticHeroMediaMarkup() {
