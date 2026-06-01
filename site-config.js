@@ -237,8 +237,8 @@
 
   const defaults = {
     brandName: "Caseform",
-    pageTitle: "Caseform - 블랙&골드 프리미엄 핸드폰 케이스",
-    heroImage: "assets/hero-cases-original.png",
+    pageTitle: "Caseform - 화이트 프리미엄 핸드폰 케이스",
+    heroImage: "assets/hero-cases.png",
     heroSlideInterval: 5,
     heroTransitionDuration: 650,
     heroMediaMode: "blend",
@@ -250,16 +250,16 @@
       accentSoft: "#f3d891",
       accentWarm: "#b8892f",
     },
-    heroEyebrow: "Drop 01 / Gold Line",
+    heroEyebrow: "Drop 01 / White Line",
     heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
     heroSubtitle:
       "무광 블랙, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요.",
     heroSpecs: ["Gold line", "39,000원부터", "오늘 주문 시 내일 출고"],
     primaryCta: "컬렉션 보기",
     secondaryCta: "배송 안내",
-    priceNote: "7일 교환 · 3만원 이상 무료 배송 · 블랙&골드 화면 마감",
+    priceNote: "7일 교환 · 3만원 이상 무료 배송 · 화이트 화면 마감",
     collectionEyebrow: "Current drop",
-    collectionTitle: "블랙 화면 위 골드 라인, 손에는 제품의 질감.",
+    collectionTitle: "흰 화면 위 또렷하게 보이는 케이스의 질감.",
     supportEyebrow: "After care",
     supportTitle: "판매 후에도 흐릿해지지 않는 기준.",
     products,
@@ -384,6 +384,25 @@
   function mergeSettings(base, saved) {
     const merged = { ...clone(base), ...(saved || {}) };
     const mediaModes = ["blend", "fill", "focus"];
+
+    if (saved) {
+      if (saved.heroImage === "assets/hero-cases-original.png") {
+        merged.heroImage = base.heroImage;
+      }
+      if (saved.pageTitle === "Caseform - 블랙&골드 프리미엄 핸드폰 케이스") {
+        merged.pageTitle = base.pageTitle;
+      }
+      if (saved.heroEyebrow === "Drop 01 / Gold Line") {
+        merged.heroEyebrow = base.heroEyebrow;
+      }
+      if (saved.priceNote === "7일 교환 · 3만원 이상 무료 배송 · 블랙&골드 화면 마감") {
+        merged.priceNote = base.priceNote;
+      }
+      if (saved.collectionTitle === "블랙 화면 위 골드 라인, 손에는 제품의 질감.") {
+        merged.collectionTitle = base.collectionTitle;
+      }
+    }
+
     merged.colors = { ...base.colors, ...(saved && saved.colors ? saved.colors : {}) };
     if (Array.isArray(saved && saved.products)) {
       const productCount = Math.max(base.products.length, saved.products.length);

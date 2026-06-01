@@ -16,6 +16,7 @@ const heroPreload = document.querySelector("#hero-preload");
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
+const whiteHeroImage = "assets/hero-cases.png";
 const catalogMobileQuery = window.matchMedia("(max-width: 720px)");
 let heroSlideTimer;
 let heroSwapTimer;
@@ -77,6 +78,16 @@ function heroMediaContentMarkup(product) {
       caseClass: "hero-product-case",
     })}
   `;
+}
+
+function useStaticHeroImage() {
+  return true;
+}
+
+function staticHeroMediaMarkup() {
+  const savedSource = mediaSource(settings.heroImage);
+  const source = /hero-cases\.png(?:[?#].*)?$/i.test(savedSource) ? savedSource : whiteHeroImage;
+  return `<img src="${escapeHtml(source)}" alt="Caseform 핸드폰 케이스 컬렉션" loading="eager" />`;
 }
 
 function heroTransitionMs() {
@@ -143,7 +154,30 @@ function renderHeroDots(slides) {
 
 function renderHeroSlide(nextIndex = 0, immediate = false) {
   const slides = heroSlideItems();
-  if (!slides.length) return;
+  if (!slides.length && !useStaticHeroImage()) return;
+
+  if (useStaticHeroImage()) {
+    activeHeroSlide = 0;
+    renderHeroDots([]);
+
+    heroTitle.textContent = settings.heroTitle;
+    heroSubtitle.textContent = settings.heroSubtitle;
+    heroCopyLink.href = productsUrl();
+    heroCopyLink.setAttribute("aria-label", "전체 상품 페이지로 이동");
+    if (heroMobileProductLink) {
+      heroMobileProductLink.href = productsUrl();
+      heroMobileProductLink.textContent = "컬렉션 보기";
+      heroMobileProductLink.setAttribute("aria-label", "컬렉션 보기");
+    }
+    heroMediaLink.href = productsUrl();
+    heroMediaLink.dataset.mediaMode = "static";
+    heroMediaLink.classList.remove("has-product-media");
+    heroMediaLink.classList.add("is-static-hero");
+    heroMediaLink.innerHTML = staticHeroMediaMarkup();
+    heroPreload.href = whiteHeroImage;
+    hero.classList.remove("is-switching");
+    return;
+  }
 
   activeHeroSlide = ((nextIndex % slides.length) + slides.length) % slides.length;
   const { product, index } = slides[activeHeroSlide];
@@ -170,6 +204,7 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
       }
       heroMediaLink.href = detailUrl;
       heroMediaLink.dataset.mediaMode = settings.heroMediaMode || "blend";
+      heroMediaLink.classList.remove("is-static-hero");
       heroMediaLink.classList.toggle("has-product-media", productHasMedia(product));
       heroMediaLink.innerHTML = heroMediaContentMarkup(product);
 
@@ -185,6 +220,7 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
 
 function startHeroSlider() {
   stopHeroSlider();
+  if (useStaticHeroImage()) return;
   const slides = heroSlideItems();
   if (slides.length <= 1) return;
 
@@ -201,6 +237,7 @@ function stopHeroSlider() {
 }
 
 function startHeroSwipe(event) {
+  if (useStaticHeroImage()) return;
   if (!catalogMobileQuery.matches || event.pointerType === "mouse" || event.isPrimary === false) return;
 
   heroSwipePointerId = event.pointerId;
