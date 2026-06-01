@@ -5,6 +5,7 @@
     cart: "caseform-cart-v1",
     reviews: "caseform-reviews-v1",
   };
+  const productMediaBucket = "product-media";
 
   const seededReviews = [
     {
@@ -57,6 +58,8 @@
   let profileCache = null;
   let cartCache = [];
   let reviewCache = null;
+  let productCache = null;
+  let orderCache = [];
   let authListenerReady = false;
 
   function readJson(key, fallback) {
@@ -148,11 +151,74 @@
       id: row.id,
       productIndex: row.product_index,
       userId: row.user_id,
-      author: row.author || "Caseform 회원",
+      author: row.author || "VELTIER 회원",
       rating: Number(row.rating || 5),
       title: row.title,
       body: row.body,
       createdAt: row.created_at,
+    };
+  }
+
+  function rowToProduct(row) {
+    return {
+      name: row.name,
+      material: row.material || "",
+      color: row.color || "#202124",
+      price: Number(row.price || 0),
+      mediaType: row.media_type === "video" ? "video" : "image",
+      image: row.image || "",
+      video: row.video || "",
+      showInHero: Boolean(row.show_in_hero),
+      isActive: row.is_active !== false,
+      description: row.description || "",
+    };
+  }
+
+  function productToRow(product, index) {
+    return {
+      product_index: index,
+      name: String(product.name || `상품 ${index + 1}`),
+      material: String(product.material || ""),
+      color: String(product.color || "#202124"),
+      price: Number(product.price || 0),
+      media_type: product.mediaType === "video" ? "video" : "image",
+      image: String(product.image || ""),
+      video: String(product.video || ""),
+      show_in_hero: Boolean(product.showInHero),
+      is_active: product.isActive !== false,
+      sort_order: index,
+      description: String(product.description || ""),
+    };
+  }
+
+  function rowToOrder(row) {
+    return {
+      id: row.id,
+      orderNumber: row.order_number,
+      status: row.status,
+      paymentStatus: row.payment_status,
+      recipientName: row.recipient_name,
+      phone: row.phone,
+      email: row.email,
+      postalCode: row.postal_code,
+      address1: row.address1,
+      address2: row.address2,
+      deliveryNote: row.delivery_note,
+      subtotal: Number(row.subtotal || 0),
+      shippingFee: Number(row.shipping_fee || 0),
+      total: Number(row.total || 0),
+      currency: row.currency || "KRW",
+      createdAt: row.created_at,
+      items: (row.order_items || []).map((item) => ({
+        id: item.id,
+        productIndex: item.product_index,
+        productName: item.product_name,
+        productImage: item.product_image,
+        device: item.device,
+        quantity: Number(item.quantity || 1),
+        price: Number(item.price || 0),
+        lineTotal: Number(item.line_total || 0),
+      })),
     };
   }
 
@@ -197,6 +263,45 @@
     return cartCache;
   }
 
+  async function syncLocalCartToRemote() {
+    if (!client || !authUser) return;
+    const localCart = readJson(keys.cart, []);
+    if (!Array.isArray(localCart) || !localCart.length) return;
+
+    await loadCart();
+
+    for (const item of localCart) {
+      const existing = cartCache.find(
+        (cartItem) =>
+          Number(cartItem.productIndex) === Number(item.productIndex) &&
+          cartItem.device === item.device,
+      );
+
+      if (existing) {
+        await client
+          .from("cart_items")
+          .update({
+            quantity: Number(existing.quantity || 1) + Number(item.quantity || 1),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      } else {
+        await client.from("cart_items").insert({
+          user_id: authUser.id,
+          product_index: Number(item.productIndex || 0),
+          product_name: item.productName || "상품",
+          product_image: item.productImage || "",
+          price: Number(item.price || 0),
+          device: item.device || "기종 미선택",
+          quantity: Number(item.quantity || 1),
+        });
+      }
+    }
+
+    window.localStorage.removeItem(keys.cart);
+    await loadCart();
+  }
+
   async function loadReviews() {
     if (!client) {
       reviewCache = ensureLocalReviews();
@@ -213,9 +318,119 @@
     return reviewCache;
   }
 
+  async function loadProducts(settings) {
+    const fallbackProducts = (settings && settings.products) || [];
+
+    if (!client) {
+      productCache = fallbackProducts;
+      return productCache;
+    }
+
+    const { data, error } = await client
+      .from("products")
+      .select("product_index, name, material, color, price, media_type, image, video, show_in_hero, is_active, sort_order, description")
+      .order("sort_order", { ascending: true })
+      .order("product_index", { ascending: true });
+
+    if (error) {
+      console.warn("VELTIER products could not be loaded.", error);
+      productCache = fallbackProducts;
+      return productCache;
+    }
+
+    productCache = data && data.length ? data.map(rowToProduct) : fallbackProducts;
+    return productCache;
+  }
+
+  async function getProductSettings(settings) {
+    const baseSettings = window.CaseformConfig
+      ? window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, settings)
+      : settings;
+    const products = await loadProducts(baseSettings);
+    return { ...baseSettings, products };
+  }
+
+  async function saveProducts(products) {
+    if (!client) {
+      productCache = products;
+      return products;
+    }
+
+    if (!isAdmin()) throw new Error("상품 저장은 관리자 권한이 필요합니다.");
+
+    const rows = products.map(productToRow);
+    const { data, error } = await client
+      .from("products")
+      .upsert(rows, { onConflict: "product_index" })
+      .select("product_index, name, material, color, price, media_type, image, video, show_in_hero, is_active, sort_order, description")
+      .order("sort_order", { ascending: true });
+
+    if (error) throw error;
+    productCache = (data || rows).map(rowToProduct);
+    return productCache;
+  }
+
+  function mediaFilePath(file, productIndex, mediaKind) {
+    const extension = String(file.name || "")
+      .split(".")
+      .pop()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "") || (mediaKind === "video" ? "mp4" : "png");
+    const safeName = String(file.name || "product-media")
+      .replace(/\.[^.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "product-media";
+
+    return `products/${Number(productIndex || 0)}/${Date.now()}-${safeName}.${extension}`;
+  }
+
+  async function uploadProductMedia(file, { productIndex = 0, mediaKind = "image" } = {}) {
+    if (!client) throw new Error("Supabase 연결 후 업로드할 수 있습니다.");
+    if (!isAdmin()) throw new Error("상품 미디어 업로드는 관리자 권한이 필요합니다.");
+    if (!file) throw new Error("업로드할 파일을 선택해주세요.");
+
+    const path = mediaFilePath(file, productIndex, mediaKind);
+    const { error } = await client.storage.from(productMediaBucket).upload(path, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+    });
+    if (error) throw error;
+
+    const { data } = client.storage.from(productMediaBucket).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function loadOrders() {
+    if (!client || !authUser) {
+      orderCache = [];
+      return orderCache;
+    }
+
+    const { data, error } = await client
+      .from("orders")
+      .select("*, order_items(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("VELTIER orders could not be loaded.", error);
+      orderCache = [];
+      return orderCache;
+    }
+
+    orderCache = (data || []).map(rowToOrder);
+    return orderCache;
+  }
+
   async function refreshRemote(settings) {
     if (!client) return;
-    await Promise.all([authUser ? loadProfile() : Promise.resolve(null), authUser ? loadCart() : Promise.resolve([]), loadReviews()]);
+    await Promise.all([
+      authUser ? loadProfile() : Promise.resolve(null),
+      authUser ? loadCart() : Promise.resolve([]),
+      authUser ? loadOrders() : Promise.resolve([]),
+      loadReviews(),
+    ]);
     renderCartDrawer(settings || window.caseformActiveSettings);
     dispatchShopUpdate();
   }
@@ -298,6 +513,7 @@
     authUser = data.session?.user || null;
     if (authUser) {
       await loadProfile();
+      await syncLocalCartToRemote();
       await loadCart();
     }
 
@@ -332,7 +548,9 @@
     if (error) throw new Error("이메일 또는 비밀번호를 확인해주세요.");
 
     authUser = data.user;
-    await Promise.all([loadProfile(), loadCart()]);
+    await loadProfile();
+    await syncLocalCartToRemote();
+    await Promise.all([loadCart(), loadOrders()]);
     dispatchShopUpdate();
     return profileCache;
   }
@@ -348,6 +566,7 @@
     authUser = null;
     profileCache = null;
     cartCache = [];
+    orderCache = [];
     renderCartDrawer(window.caseformActiveSettings);
     dispatchShopUpdate();
   }
@@ -478,6 +697,61 @@
     return getCart().reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0);
   }
 
+  function getOrders() {
+    return orderCache;
+  }
+
+  async function createOrder({ recipientName, phone, email, postalCode, address1, address2, deliveryNote }) {
+    const member = currentMember();
+    const items = getCart();
+
+    if (!member) throw new Error("주문하려면 로그인이 필요합니다.");
+    if (!client || !authUser) throw new Error("Supabase 연결 후 주문을 만들 수 있습니다.");
+    if (!items.length) throw new Error("장바구니에 담긴 상품이 없습니다.");
+
+    const subtotal = cartTotal();
+    const shippingFee = subtotal >= 30000 ? 0 : 3000;
+    const total = subtotal + shippingFee;
+
+    const { data: order, error: orderError } = await client
+      .from("orders")
+      .insert({
+        user_id: authUser.id,
+        recipient_name: String(recipientName || member.name || "").trim(),
+        phone: String(phone || member.phone || "").trim(),
+        email: normalizeEmail(email || member.email),
+        postal_code: String(postalCode || "").trim(),
+        address1: String(address1 || "").trim(),
+        address2: String(address2 || "").trim(),
+        delivery_note: String(deliveryNote || "").trim(),
+        subtotal,
+        shipping_fee: shippingFee,
+        total,
+      })
+      .select("*")
+      .single();
+
+    if (orderError) throw orderError;
+
+    const orderItems = items.map((item) => ({
+      order_id: order.id,
+      product_index: Number(item.productIndex || 0),
+      product_name: item.productName,
+      product_image: item.productImage || "",
+      device: item.device,
+      quantity: Number(item.quantity || 1),
+      price: Number(item.price || 0),
+      line_total: Number(item.price || 0) * Number(item.quantity || 1),
+    }));
+
+    const { error: itemError } = await client.from("order_items").insert(orderItems);
+    if (itemError) throw itemError;
+
+    await loadOrders();
+    dispatchShopUpdate();
+    return orderCache.find((item) => item.id === order.id) || rowToOrder({ ...order, order_items: orderItems });
+  }
+
   function ensureLocalReviews() {
     const saved = readJson(keys.reviews, null);
     if (Array.isArray(saved)) return saved;
@@ -522,7 +796,7 @@
       const { error } = await client.from("reviews").insert({
         product_index: Number(productIndex || 0),
         user_id: authUser.id,
-        author: member.name || "Caseform 회원",
+        author: member.name || "VELTIER 회원",
         rating: cleanRating,
         title: cleanTitle,
         body: cleanBody,
@@ -602,12 +876,17 @@
       removeCartItem(removeButton.dataset.cartRemove);
     });
     drawer.querySelector("#cart-checkout").addEventListener("click", () => {
-      const status = document.createElement("p");
-      status.className = "cart-empty";
-      status.textContent = currentMember()
-        ? "실제 결제 연결은 다음 단계에서 붙일 수 있습니다."
-        : "로그인 후 구매 흐름을 연결할 수 있습니다.";
-      drawer.querySelector("#cart-items").prepend(status);
+      if (!getCart().length) {
+        const status = document.createElement("p");
+        status.className = "cart-empty";
+        status.textContent = "장바구니에 담긴 상품이 없습니다.";
+        drawer.querySelector("#cart-items").prepend(status);
+        return;
+      }
+
+      window.location.href = currentMember()
+        ? pageUrl("checkout.html", window.caseformActiveSettings)
+        : pageUrl("account.html", window.caseformActiveSettings);
     });
 
     return drawer;
@@ -722,6 +1001,11 @@
     getReviews,
     getMemberReviews,
     addReview,
+    getProductSettings,
+    saveProducts,
+    uploadProductMedia,
+    getOrders,
+    createOrder,
     setupHeaderActions,
     renderCartDrawer,
     openCartDrawer,

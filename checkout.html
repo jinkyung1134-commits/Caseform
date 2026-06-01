@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VELTIER 주문서</title>
+    <meta name="description" content="VELTIER 주문 정보와 배송지를 확인하는 체크아웃 화면." />
+    <link rel="stylesheet" href="styles.css?v=20260602-commerce-core" />
+  </head>
+  <body class="checkout-page gold-finish">
+    <header class="site-header" aria-label="상단 메뉴">
+      <nav class="nav">
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <a class="brand" href="index.html" data-home-link data-setting="brandName">VELTIER</a>
+        <div class="nav-links" aria-label="주요 메뉴">
+          <a href="products.html" data-products-link>컬렉션</a>
+          <a href="product.html?id=0#reviews">리뷰</a>
+          <a href="account.html" data-account-link>마이페이지</a>
+          <a href="index.html#support" data-support-link>배송</a>
+          <a href="admin.html">관리자</a>
+        </div>
+        <div class="mobile-nav-actions" aria-label="빠른 메뉴">
+          <button class="mobile-icon-button is-account" type="button" aria-label="마이페이지"></button>
+          <button class="mobile-icon-button is-bag" type="button" aria-label="장바구니"></button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="checkout-main">
+      <section class="checkout-hero" aria-labelledby="checkout-title">
+        <p class="eyebrow">Checkout</p>
+        <h1 id="checkout-title">주문 정보를 확인하세요.</h1>
+        <p>결제 모듈 연결 전 단계입니다. 지금은 주문 대기 데이터를 Supabase에 생성합니다.</p>
+      </section>
+
+      <section class="checkout-layout" aria-label="주문서">
+        <form class="checkout-panel checkout-form" id="checkout-form">
+          <div class="account-panel-head">
+            <p class="eyebrow">Delivery</p>
+            <h2>배송 정보</h2>
+          </div>
+          <label>
+            <span>받는 분</span>
+            <input name="recipientName" type="text" autocomplete="name" required />
+          </label>
+          <label>
+            <span>연락처</span>
+            <input name="phone" type="tel" autocomplete="tel" required />
+          </label>
+          <label>
+            <span>이메일</span>
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            <span>우편번호</span>
+            <input name="postalCode" type="text" inputmode="numeric" autocomplete="postal-code" />
+          </label>
+          <label class="wide-field">
+            <span>주소</span>
+            <input name="address1" type="text" autocomplete="street-address" required />
+          </label>
+          <label class="wide-field">
+            <span>상세 주소</span>
+            <input name="address2" type="text" />
+          </label>
+          <label class="wide-field">
+            <span>배송 메모</span>
+            <textarea name="deliveryNote" rows="3"></textarea>
+          </label>
+          <button class="button primary" id="order-submit" type="submit">주문 생성</button>
+          <p class="form-status" id="checkout-status" aria-live="polite"></p>
+        </form>
+
+        <aside class="checkout-panel checkout-summary" aria-labelledby="summary-title">
+          <div class="account-panel-head">
+            <p class="eyebrow">Summary</p>
+            <h2 id="summary-title">주문 요약</h2>
+          </div>
+          <div class="checkout-items" id="checkout-items"></div>
+          <dl class="checkout-totals">
+            <div>
+              <dt>상품 합계</dt>
+              <dd id="checkout-subtotal">0원</dd>
+            </div>
+            <div>
+              <dt>배송비</dt>
+              <dd id="checkout-shipping">0원</dd>
+            </div>
+            <div class="checkout-total-line">
+              <dt>총 결제 예정 금액</dt>
+              <dd id="checkout-total">0원</dd>
+            </div>
+          </dl>
+          <div class="payment-ready">
+            <p class="eyebrow">Payment</p>
+            <strong id="payment-state">결제사 연결 대기</strong>
+            <p>다음 단계에서 Toss Payments 또는 Stripe 결제창을 이 위치에 연결할 수 있습니다.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="site-config.js?v=20260602-commerce-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js?v=20260602-supabase-live"></script>
+    <script src="shop.js?v=20260602-commerce-core"></script>
+    <script src="checkout.js?v=20260602-commerce-core"></script>
+  </body>
+</html>

@@ -87,7 +87,7 @@ function useStaticHeroImage() {
 function staticHeroMediaMarkup() {
   const savedSource = mediaSource(settings.heroImage);
   const source = /hero-cases\.png(?:[?#].*)?$/i.test(savedSource) ? savedSource : whiteHeroImage;
-  return `<img src="${escapeHtml(source)}" alt="Caseform 핸드폰 케이스 컬렉션" loading="eager" />`;
+  return `<img src="${escapeHtml(source)}" alt="VELTIER 핸드폰 케이스 컬렉션" loading="eager" />`;
 }
 
 function heroTransitionMs() {
@@ -310,13 +310,26 @@ function renderProducts() {
   setupRevealAnimations();
 }
 
-function refreshFromStorage() {
+async function hydrateProductSettings() {
+  if (!window.CaseformShop?.getProductSettings) return;
+  settings = await window.CaseformShop.getProductSettings(settings);
+  products = settings.products;
+}
+
+async function refreshFromStorage() {
   const nextSettings = window.CaseformConfig.load();
   if (JSON.stringify(nextSettings) === JSON.stringify(settings)) return;
 
   settings = nextSettings;
+  await hydrateProductSettings();
   products = settings.products;
   activeHeroSlide = 0;
+  applySettings();
+  renderProducts();
+}
+
+async function boot() {
+  await hydrateProductSettings();
   applySettings();
   renderProducts();
 }
@@ -343,8 +356,11 @@ function setupRevealAnimations() {
   targets.forEach((target) => observer.observe(target));
 }
 
-applySettings();
-renderProducts();
+boot().catch((error) => {
+  console.warn("VELTIER products could not be prepared.", error);
+  applySettings();
+  renderProducts();
+});
 
 document.querySelector("#hero-slide-dots").addEventListener("click", (event) => {
   const dot = event.target.closest("[data-hero-dot]");

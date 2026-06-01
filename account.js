@@ -1,5 +1,5 @@
-const settings = window.CaseformConfig.load();
-const products = settings.products;
+let settings = window.CaseformConfig.load();
+let products = settings.products;
 const shop = window.CaseformShop;
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
@@ -11,6 +11,7 @@ const profileForm = document.querySelector("#profile-form");
 const authStatus = document.querySelector("#auth-status");
 const profileStatus = document.querySelector("#profile-status");
 const accountCartList = document.querySelector("#account-cart-list");
+const accountOrderList = document.querySelector("#account-order-list");
 const accountReviewList = document.querySelector("#account-review-list");
 
 function productUrl(index) {
@@ -63,6 +64,12 @@ async function applySettings() {
   await shop.init(settings);
 }
 
+async function hydrateProductSettings() {
+  if (!shop?.getProductSettings) return;
+  settings = await shop.getProductSettings(settings);
+  products = settings.products;
+}
+
 function renderAccount() {
   const member = shop.currentMember();
   document.body.classList.toggle("is-signed-in", Boolean(member));
@@ -77,6 +84,7 @@ function renderAccount() {
   }
 
   renderCartSummary();
+  renderOrderSummary();
   renderReviewSummary();
   shop.setupHeaderActions(settings);
 }
@@ -98,6 +106,43 @@ function renderCartSummary() {
         </a>
       `;
     })
+    .join("");
+}
+
+function orderStatusLabel(status) {
+  const labels = {
+    pending_payment: "결제 대기",
+    paid: "결제 완료",
+    preparing: "상품 준비",
+    shipped: "배송 중",
+    delivered: "배송 완료",
+    cancelled: "취소",
+  };
+  return labels[status] || status || "확인 중";
+}
+
+function renderOrderSummary() {
+  const member = shop.currentMember();
+  if (!member) {
+    accountOrderList.innerHTML = `<div class="account-empty">로그인하면 주문 내역이 표시됩니다.</div>`;
+    return;
+  }
+
+  const orders = shop.getOrders ? shop.getOrders() : [];
+  if (!orders.length) {
+    accountOrderList.innerHTML = `<div class="account-empty">아직 주문 내역이 없습니다.</div>`;
+    return;
+  }
+
+  accountOrderList.innerHTML = orders
+    .map(
+      (order) => `
+        <div class="account-list-item">
+          <strong>${escapeHtml(order.orderNumber)} · ${orderStatusLabel(order.status)}</strong>
+          <span>${new Date(order.createdAt).toLocaleDateString("ko-KR")} · ${shop.formatWon(order.total)}</span>
+        </div>
+      `,
+    )
     .join("");
 }
 
@@ -208,6 +253,7 @@ window.addEventListener("storage", renderAccount);
 window.addEventListener("caseform:shop-updated", renderAccount);
 
 async function boot() {
+  await hydrateProductSettings();
   await applySettings();
   setupHeaderMenu();
   renderAccount();

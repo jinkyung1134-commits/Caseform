@@ -1,8 +1,8 @@
-const settings = window.CaseformConfig.load();
-const products = settings.products;
+let settings = window.CaseformConfig.load();
+let products = settings.products;
 const params = new URLSearchParams(window.location.search);
-const selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
-const product = products[selectedIndex] || products[0];
+let selectedIndex = 0;
+let product = products[0];
 const { escapeHtml, mediaSource, productHasMedia, productMediaMarkup } = window.CaseformConfig;
 const shop = window.CaseformShop;
 const detailFallbackImage = "assets/caseform-obsidian-grid-concept.png?v=20260601-scroll-image";
@@ -19,6 +19,11 @@ const reviewStatus = document.querySelector("#review-status");
 const reviewSummary = document.querySelector("#reviews-summary");
 const reviewMemberState = document.querySelector("#review-member-state");
 const reviewSubmit = document.querySelector("#review-submit");
+
+function syncSelectedProduct() {
+  selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
+  product = products[selectedIndex] || products[0];
+}
 
 function formatWon(value) {
   return `${Number(value).toLocaleString("ko-KR")}원`;
@@ -364,14 +369,27 @@ function setupHeaderMenu() {
   });
 }
 
-applyTheme();
-renderDetail();
-renderRelated();
-setupHeaderMenu();
-setupScrollStory();
-setupRevealAnimations();
-setupPurchaseFlow();
-setupRelatedSlider();
-setupReviews().catch((error) => {
-  if (reviewStatus) reviewStatus.textContent = error.message || "리뷰를 불러오지 못했습니다.";
+async function hydrateProductSettings() {
+  if (!shop?.getProductSettings) return;
+  settings = await shop.getProductSettings(settings);
+  products = settings.products;
+  syncSelectedProduct();
+}
+
+async function boot() {
+  syncSelectedProduct();
+  await hydrateProductSettings();
+  applyTheme();
+  renderDetail();
+  renderRelated();
+  setupHeaderMenu();
+  setupScrollStory();
+  setupRevealAnimations();
+  setupPurchaseFlow();
+  setupRelatedSlider();
+  await setupReviews();
+}
+
+boot().catch((error) => {
+  if (reviewStatus) reviewStatus.textContent = error.message || "상세 페이지를 불러오지 못했습니다.";
 });

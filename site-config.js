@@ -236,8 +236,8 @@
   ];
 
   const defaults = {
-    brandName: "Caseform",
-    pageTitle: "Caseform - 화이트 프리미엄 핸드폰 케이스",
+    brandName: "VELTIER",
+    pageTitle: "VELTIER - 프리미엄 핸드폰 케이스",
     heroImage: "assets/hero-cases.png",
     heroSlideInterval: 5,
     heroTransitionDuration: 650,
@@ -253,7 +253,7 @@
     heroEyebrow: "Drop 01 / White Line",
     heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
     heroSubtitle:
-      "무광 블랙, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요.",
+      "아이보리 사틴, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요.",
     heroSpecs: ["Gold line", "39,000원부터", "오늘 주문 시 내일 출고"],
     primaryCta: "컬렉션 보기",
     secondaryCta: "배송 안내",
@@ -386,6 +386,12 @@
     const mediaModes = ["blend", "fill", "focus"];
 
     if (saved) {
+      if (saved.brandName === "Caseform") {
+        merged.brandName = base.brandName;
+      }
+      if (saved.pageTitle === "Caseform - 화이트 프리미엄 핸드폰 케이스") {
+        merged.pageTitle = base.pageTitle;
+      }
       if (saved.heroImage === "assets/hero-cases-original.png") {
         merged.heroImage = base.heroImage;
       }

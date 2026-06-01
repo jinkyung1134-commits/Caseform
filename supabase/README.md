@@ -1,4 +1,4 @@
-# Caseform Supabase 연결 순서
+# VELTIER Supabase 연결 순서
 
 1. Supabase에서 새 프로젝트를 만듭니다.
 2. `SQL Editor`에서 `supabase/schema.sql` 내용을 실행합니다.
@@ -14,7 +14,7 @@ window.CASEFORM_SUPABASE = {
 
 `service_role` key는 서버 전용 비밀키라서 GitHub Pages, HTML, JS 파일에 넣으면 안 됩니다.
 
-이 설정이 비어 있으면 Caseform은 기존 로컬 샘플 모드로 동작합니다.
+이 설정이 비어 있으면 VELTIER는 기존 로컬 샘플 모드로 동작합니다.
 
 ## 권한 구조
 
@@ -23,6 +23,16 @@ window.CASEFORM_SUPABASE = {
 - `manager`: 나중에 CS/운영 담당자용으로 확장할 수 있는 예비 권한입니다.
 
 권한은 `profiles.role`에 저장됩니다. 일반 회원가입으로 생성되는 계정은 항상 `customer`로 시작합니다.
+
+## 운영 데이터
+
+`supabase/schema.sql`에는 아래 운영 테이블과 스토리지 정책이 포함되어 있습니다.
+
+- `products`: 관리자 상품 관리용 테이블입니다. 공개 화면은 `is_active = true` 상품만 읽습니다.
+- `product-media`: 상품 이미지/영상 업로드용 공개 스토리지 버킷입니다. 업로드/수정/삭제는 `admin`만 가능합니다.
+- `orders`, `order_items`: 결제 연결 전 단계의 주문 생성용 테이블입니다. 고객은 본인 주문만 보고, 관리자는 전체 주문을 볼 수 있습니다.
+
+새 스키마를 실행한 뒤 관리자 페이지에서 상품을 저장하면 현재 상품 목록이 Supabase `products` 테이블로 동기화됩니다.
 
 ## 첫 관리자 지정
 

@@ -102,6 +102,10 @@ async function bootAdmin() {
       renderAdminAccess(access);
 
       if (access.allowed) {
+        if (shop?.getProductSettings) {
+          settings = await shop.getProductSettings(settings);
+        }
+
         if (!adminReady) {
           populate();
           adminReady = true;
@@ -204,6 +208,10 @@ function renderProductFields() {
           <label class="admin-toggle wide-field">
             <input name="product-${index}-showInHero" type="checkbox"${product.showInHero ? " checked" : ""} />
             <span>메인 상품 슬라이드에 표시</span>
+          </label>
+          <label class="admin-toggle wide-field">
+            <input name="product-${index}-isActive" type="checkbox"${product.isActive !== false ? " checked" : ""} />
+            <span>판매 화면에 노출</span>
           </label>
           <label class="wide-field">
             <span>이미지 경로</span>
@@ -327,6 +335,7 @@ function collectProducts() {
     image: form.elements[`product-${index}-image`].value.trim(),
     video: form.elements[`product-${index}-video`].value.trim(),
     showInHero: form.elements[`product-${index}-showInHero`].checked,
+    isActive: form.elements[`product-${index}-isActive`].checked,
     description:
       form.elements[`product-${index}-description`].value.trim() || product.description,
   }));
@@ -473,7 +482,7 @@ function saveMediaDraft() {
     updateAdminDashboard();
     statusText.textContent = "파일 등록됨";
   } catch (error) {
-    console.warn("Caseform media could not be saved.", error);
+    console.warn("VELTIER media could not be saved.", error);
     updateProductPreviews(draft);
     statusText.textContent = "이미지 용량이 큼";
   }
@@ -492,12 +501,30 @@ function readProductFile(input) {
   statusText.textContent = mediaKind === "image" ? "이미지 읽는 중" : "영상 읽는 중";
 
   reader.addEventListener("load", async () => {
-    const normalized = normalizeDataUrl(file, reader.result, mediaKind);
-    targetField.value =
-      mediaKind === "image" ? await optimizeImageDataUrl(file, normalized) : normalized;
-    mediaTypeField.value = mediaKind;
-    updatePreview();
-    saveMediaDraft();
+    try {
+      if (shop?.isSupabaseEnabled() && shop.isAdmin()) {
+        statusText.textContent = mediaKind === "image" ? "이미지 업로드 중" : "영상 업로드 중";
+        targetField.value = await shop.uploadProductMedia(file, {
+          productIndex: index,
+          mediaKind,
+        });
+      } else {
+        const normalized = normalizeDataUrl(file, reader.result, mediaKind);
+        targetField.value =
+          mediaKind === "image" ? await optimizeImageDataUrl(file, normalized) : normalized;
+      }
+
+      mediaTypeField.value = mediaKind;
+      updatePreview();
+      saveMediaDraft();
+    } catch (error) {
+      const normalized = normalizeDataUrl(file, reader.result, mediaKind);
+      targetField.value =
+        mediaKind === "image" ? await optimizeImageDataUrl(file, normalized) : normalized;
+      mediaTypeField.value = mediaKind;
+      updatePreview();
+      statusText.textContent = error.message || "업로드 실패";
+    }
   });
 
   reader.addEventListener("error", () => {
@@ -560,18 +587,23 @@ productHost.addEventListener("change", (event) => {
   updateHomeLinks();
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   settings = window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, collectSettings());
   try {
     window.CaseformConfig.save(settings);
+    if (shop?.isSupabaseEnabled() && shop.isAdmin()) {
+      statusText.textContent = "Supabase에 저장 중";
+      settings = { ...settings, products: await shop.saveProducts(settings.products) };
+      window.CaseformConfig.save(settings);
+    }
     updateHomeLinks(settings);
     updateProductPreviews(settings);
     updateAdminDashboard();
-    statusText.textContent = "저장됨";
+    statusText.textContent = shop?.isSupabaseEnabled() ? "Supabase 저장됨" : "저장됨";
   } catch (error) {
-    console.warn("Caseform settings could not be saved.", error);
-    statusText.textContent = "저장 공간 부족";
+    console.warn("VELTIER settings could not be saved.", error);
+    statusText.textContent = error.message || "저장 실패";
   }
 });
 

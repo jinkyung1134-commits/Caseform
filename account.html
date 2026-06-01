@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Caseform 마이페이지</title>
-    <meta name="description" content="Caseform 회원가입, 로그인, 마이페이지, 리뷰 관리 화면." />
-    <link rel="stylesheet" href="styles.css?v=20260602-admin-roles" />
+    <title>VELTIER 마이페이지</title>
+    <meta name="description" content="VELTIER 회원가입, 로그인, 마이페이지, 리뷰 관리 화면." />
+    <link rel="stylesheet" href="styles.css?v=20260602-commerce-core" />
   </head>
   <body class="account-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -15,7 +15,7 @@
           <span></span>
           <span></span>
         </button>
-        <a class="brand" href="index.html" data-home-link data-setting="brandName">Caseform</a>
+        <a class="brand" href="index.html" data-home-link data-setting="brandName">VELTIER</a>
         <div class="nav-links" aria-label="주요 메뉴">
           <a href="products.html" data-products-link>컬렉션</a>
           <a href="product.html?id=0#reviews">리뷰</a>
@@ -115,7 +115,7 @@
             <p class="eyebrow">Orders</p>
             <h2>주문 내역</h2>
           </div>
-          <div class="account-empty">결제 기능 연결 후 주문 내역이 표시됩니다.</div>
+          <div class="account-list" id="account-order-list"></div>
         </article>
         <article class="account-panel">
           <div class="account-panel-head">
@@ -127,10 +127,10 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260602-ivory-case"></script>
+    <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-admin-roles"></script>
-    <script src="account.js?v=20260602-admin-roles"></script>
+    <script src="shop.js?v=20260602-commerce-core"></script>
+    <script src="account.js?v=20260602-commerce-core"></script>
   </body>
 </html>

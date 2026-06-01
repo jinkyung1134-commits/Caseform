@@ -167,11 +167,18 @@ catalogMobileQuery.addEventListener("change", () => {
   renderProducts();
 });
 
-function refreshFromStorage() {
+async function hydrateProductSettings() {
+  if (!window.CaseformShop?.getProductSettings) return;
+  settings = await window.CaseformShop.getProductSettings(settings);
+  products = settings.products;
+}
+
+async function refreshFromStorage() {
   const nextSettings = window.CaseformConfig.load();
   if (JSON.stringify(nextSettings) === JSON.stringify(settings)) return;
 
   settings = nextSettings;
+  await hydrateProductSettings();
   products = settings.products;
   activeCatalogPage = 0;
   applySettings();
@@ -184,6 +191,16 @@ window.addEventListener("storage", (event) => {
 
 window.addEventListener("focus", refreshFromStorage);
 
-applySettings();
-setupHeaderMenu();
-renderProducts();
+async function boot() {
+  await hydrateProductSettings();
+  applySettings();
+  setupHeaderMenu();
+  renderProducts();
+}
+
+boot().catch((error) => {
+  console.warn("VELTIER catalog could not be prepared.", error);
+  applySettings();
+  setupHeaderMenu();
+  renderProducts();
+});
