@@ -555,6 +555,31 @@
     return profileCache;
   }
 
+  function oauthRedirectUrl() {
+    const url = new URL(window.location.href);
+    ["code", "state", "error", "error_code", "error_description"].forEach((key) => {
+      url.searchParams.delete(key);
+    });
+    return url.toString();
+  }
+
+  async function signInWithGoogle() {
+    if (!client) throw new Error("Supabase 연결 후 Google 로그인을 사용할 수 있습니다.");
+
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: oauthRedirectUrl(),
+        queryParams: {
+          prompt: "select_account",
+        },
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
   async function signOut() {
     if (!client) {
       window.localStorage.removeItem(keys.session);
@@ -991,6 +1016,7 @@
     isAdmin,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     updateProfile,
     getCart,

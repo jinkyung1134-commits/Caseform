@@ -5,6 +5,7 @@ const resetButton = document.querySelector("#reset-button");
 const adminGate = document.querySelector("#admin-gate");
 const adminApp = document.querySelector("#admin-app");
 const adminLoginForm = document.querySelector("#admin-login-form");
+const adminGoogleAuthButton = document.querySelector("#admin-google-auth-button");
 const adminGateCopy = document.querySelector("#admin-gate-copy");
 const adminAuthStatus = document.querySelector("#admin-auth-status");
 const adminSignout = document.querySelector("#admin-signout");
@@ -57,6 +58,7 @@ function renderAdminAccess(access) {
   adminSaveButton.hidden = !allowed;
   adminSaveButton.disabled = !allowed;
   adminLoginForm.hidden = allowed || access.reason === "forbidden";
+  if (adminGoogleAuthButton) adminGoogleAuthButton.hidden = allowed || !shop?.isSupabaseEnabled();
   adminSignout.hidden = !member;
   adminGate.classList.toggle("is-verified", allowed);
 
@@ -551,6 +553,22 @@ adminLoginForm.addEventListener("submit", async (event) => {
     setAdminAuthStatus(error.message || "로그인 정보를 확인해주세요.", "warning");
   }
 });
+
+if (adminGoogleAuthButton) {
+  adminGoogleAuthButton.addEventListener("click", async () => {
+    if (!shop) return;
+
+    setAdminAuthStatus("Google 로그인 화면으로 이동합니다.", "neutral");
+    adminGoogleAuthButton.disabled = true;
+
+    try {
+      await shop.signInWithGoogle();
+    } catch (error) {
+      adminGoogleAuthButton.disabled = false;
+      setAdminAuthStatus(error.message || "Google 로그인을 시작하지 못했습니다.", "warning");
+    }
+  });
+}
 
 adminSignout.addEventListener("click", async () => {
   if (!shop) return;

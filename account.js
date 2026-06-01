@@ -8,6 +8,7 @@ const profilePanel = document.querySelector("#profile-panel");
 const loginForm = document.querySelector("#login-form");
 const signupForm = document.querySelector("#signup-form");
 const profileForm = document.querySelector("#profile-form");
+const googleAuthButton = document.querySelector("#google-auth-button");
 const authStatus = document.querySelector("#auth-status");
 const profileStatus = document.querySelector("#profile-status");
 const accountCartList = document.querySelector("#account-cart-list");
@@ -75,6 +76,7 @@ function renderAccount() {
   document.body.classList.toggle("is-signed-in", Boolean(member));
   authPanel.classList.toggle("is-hidden", Boolean(member));
   profilePanel.classList.toggle("is-hidden", !member);
+  if (googleAuthButton) googleAuthButton.hidden = Boolean(member) || !shop.isSupabaseEnabled();
 
   if (member) {
     document.querySelector("#member-name").textContent = `${member.name}님`;
@@ -230,6 +232,19 @@ signupForm.addEventListener("submit", async (event) => {
     authStatus.textContent = error.message;
   }
 });
+
+if (googleAuthButton) {
+  googleAuthButton.addEventListener("click", async () => {
+    authStatus.textContent = "Google 로그인 화면으로 이동합니다.";
+    googleAuthButton.disabled = true;
+    try {
+      await shop.signInWithGoogle();
+    } catch (error) {
+      googleAuthButton.disabled = false;
+      authStatus.textContent = error.message || "Google 로그인을 시작하지 못했습니다.";
+    }
+  });
+}
 
 profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();

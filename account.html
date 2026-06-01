@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER 마이페이지</title>
     <meta name="description" content="VELTIER 회원가입, 로그인, 마이페이지, 리뷰 관리 화면." />
-    <link rel="stylesheet" href="styles.css?v=20260602-commerce-core" />
+    <link rel="stylesheet" href="styles.css?v=20260602-google-auth" />
   </head>
   <body class="account-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -43,6 +43,12 @@
             <button class="is-active" type="button" data-auth-tab="login">로그인</button>
             <button type="button" data-auth-tab="signup">회원가입</button>
           </div>
+
+          <button class="button oauth-button" id="google-auth-button" type="button">
+            <span class="google-mark" aria-hidden="true">G</span>
+            Google 계정으로 계속하기
+          </button>
+          <div class="auth-divider" aria-hidden="true"><span>또는 이메일로</span></div>
 
           <form class="account-form" id="login-form">
             <label>
@@ -130,7 +136,7 @@
     <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-commerce-core"></script>
-    <script src="account.js?v=20260602-commerce-core"></script>
+    <script src="shop.js?v=20260602-google-auth"></script>
+    <script src="account.js?v=20260602-google-auth"></script>
   </body>
 </html>

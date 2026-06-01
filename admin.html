@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260602-commerce-core" />
-    <link rel="stylesheet" href="admin.css?v=20260602-commerce-core" />
+    <link rel="stylesheet" href="styles.css?v=20260602-google-auth" />
+    <link rel="stylesheet" href="admin.css?v=20260602-google-auth" />
   </head>
   <body class="admin-body">
     <header class="admin-header">
@@ -28,6 +28,11 @@
         </div>
 
         <form class="admin-login-form" id="admin-login-form">
+          <button class="button oauth-button" id="admin-google-auth-button" type="button">
+            <span class="google-mark" aria-hidden="true">G</span>
+            Google 관리자 로그인
+          </button>
+          <div class="auth-divider" aria-hidden="true"><span>또는 이메일로</span></div>
           <label>
             <span>이메일</span>
             <input id="admin-email" name="email" type="email" autocomplete="email" required />
@@ -199,7 +204,7 @@
     <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-commerce-core"></script>
-    <script src="admin.js?v=20260602-commerce-core"></script>
+    <script src="shop.js?v=20260602-google-auth"></script>
+    <script src="admin.js?v=20260602-google-auth"></script>
   </body>
 </html>
