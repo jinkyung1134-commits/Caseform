@@ -8,7 +8,7 @@
       color: "#161616",
       price: 39000,
       mediaType: "image",
-      image: "",
+      image: "assets/caseform-obsidian-grid-concept.png",
       video: "",
       showInHero: true,
       description: "미세 패턴 그립과 무광 블랙으로 가장 차분하게 잡히는 기본 세팅입니다.",

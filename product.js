@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
 const product = products[selectedIndex] || products[0];
 const { escapeHtml, mediaSource, productHasMedia, productMediaMarkup } = window.CaseformConfig;
-const detailSampleMedia = "assets/sample-case-hero.mp4?v=20260601-3d-case-video";
+const detailFallbackImage = "assets/caseform-obsidian-grid-concept.png?v=20260601-scroll-image";
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const jumpPurchaseButton = document.querySelector("#jump-purchase");
@@ -51,32 +51,43 @@ function renderProductMedia(target, options = {}) {
   });
 }
 
+function productDetailImageSource() {
+  return mediaSource(product.image) || mediaSource(detailFallbackImage);
+}
+
 function renderDetailHeroMedia(target) {
-  const source = mediaSource(detailSampleMedia);
-  const isVideo = /\.(mp4|mov|webm)(\?|#|$)/i.test(source);
-  target.classList.add("has-product-media", "has-hero-video");
-  target.innerHTML = isVideo
-    ? `
-      <video
-        class="product-media product-detail-media product-hero-video"
-        src="${escapeHtml(source)}"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="auto"
-        aria-label="${escapeHtml(product.name)} 360도 회전 샘플 영상"
-      ></video>
-    `
-    : `
-      <img
-        class="product-media product-detail-media product-hero-video"
-        src="${escapeHtml(source)}"
-        alt="${escapeHtml(product.name)} 360도 회전 샘플 영상"
-        decoding="async"
-      />
-    `;
-  target.querySelector("video")?.play().catch(() => {});
+  const source = productDetailImageSource();
+  const alt = `${product.name} 대표 이미지`;
+
+  target.classList.add("has-product-media", "has-hero-image");
+  target.classList.remove("has-hero-video");
+  target.innerHTML = `
+    <img class="product-detail-backdrop" src="${escapeHtml(source)}" alt="" aria-hidden="true" decoding="async" />
+    <span class="product-detail-light" aria-hidden="true"></span>
+    <img
+      class="product-media product-detail-media product-hero-image"
+      src="${escapeHtml(source)}"
+      alt="${escapeHtml(alt)}"
+      decoding="async"
+      fetchpriority="high"
+    />
+  `;
+}
+
+function renderStoryMedia(target) {
+  const source = productDetailImageSource();
+  const alt = `${product.name} 스크롤 쇼케이스 이미지`;
+
+  target.classList.add("has-product-media");
+  target.innerHTML = `
+    <img class="story-media-backdrop" src="${escapeHtml(source)}" alt="" aria-hidden="true" decoding="async" />
+    <img
+      class="product-media story-product-media"
+      src="${escapeHtml(source)}"
+      alt="${escapeHtml(alt)}"
+      loading="lazy"
+    />
+  `;
 }
 
 function renderDetail() {
@@ -86,20 +97,17 @@ function renderDetail() {
     mediaClass: "product-media purchase-product-media",
     caseClass: "product-case purchase-product-case",
   });
-  renderProductMedia(document.querySelector("#story-media"), {
-    mediaClass: "product-media story-product-media",
-    caseClass: "product-case story-product-case",
-  });
+  renderStoryMedia(document.querySelector("#story-media"));
   document.querySelector("#detail-name").textContent = product.name;
   document.querySelector("#purchase-name").textContent = product.name;
   document.querySelector("#purchase-price").textContent = formatWon(product.price);
   document.querySelector("#purchase-summary").textContent =
     `${product.material} 소재의 ${product.name} 케이스입니다. 기종을 선택한 뒤 구매 흐름을 이어가세요.`;
-  document.querySelector("#story-copy-1").textContent = `${product.name}의 ${product.material} 질감이 블랙 화면과 골드 마감선 사이에서 또렷하게 보입니다.`;
-  document.querySelector("#story-copy-2").textContent = `${formatWon(product.price)} 구성으로, 컬러와 소재를 먼저 확인한 뒤 상세 화면에서 구매 흐름을 이어갈 수 있습니다.`;
+  document.querySelector("#story-copy-1").textContent = `${product.name}의 ${product.material} 질감이 블랙 배경 위에서 천천히 떠오르도록 보여줍니다.`;
+  document.querySelector("#story-copy-2").textContent = `스크롤할수록 이미지가 가까워지고, ${formatWon(product.price)} 구성의 컬러와 소재가 먼저 눈에 들어옵니다.`;
   document.querySelector("#story-copy-3").textContent = productHasMedia(product)
-    ? "관리자에서 등록한 대표 미디어가 카드, 상세 상단, 스크롤 쇼케이스에 같은 톤으로 반영됩니다."
-    : "관리자에서 상품 이미지나 영상을 등록하면 이 영역이 실제 미디어 쇼케이스로 바뀝니다.";
+    ? "대표 이미지는 상세 상단과 스크롤 쇼케이스에 같은 톤으로 이어져, 화면이 끊기지 않게 보입니다."
+    : "상품 이미지를 등록하면 이 영역이 실제 사진 중심의 스크롤 쇼케이스로 바뀝니다.";
   document.querySelector("#collection-link").href = productsUrl();
   document.querySelector("#support-link").href = indexUrl("#support");
   document.querySelector("[data-home-link]").href = indexUrl("");
@@ -149,6 +157,23 @@ function setupScrollStory() {
     const progress = Math.min(Math.max((0 - rect.top) / total, 0), 1);
     story.style.setProperty("--story-progress", progress.toFixed(3));
     stage.style.setProperty("--story-progress", progress.toFixed(3));
+    stage.style.setProperty("--story-stage-y", `${((progress - 0.5) * -34).toFixed(1)}px`);
+    stage.style.setProperty("--story-stage-scale", (0.9 + progress * 0.18).toFixed(3));
+    stage.style.setProperty("--story-orb-opacity", (0.54 + progress * 0.28).toFixed(3));
+    stage.style.setProperty("--story-orb-scale", (0.86 + progress * 0.22).toFixed(3));
+    stage.style.setProperty("--story-image-scale", (1.01 + progress * 0.12).toFixed(3));
+    steps.forEach((step) => {
+      const stepRect = step.getBoundingClientRect();
+      const stepCenter = stepRect.top + stepRect.height / 2;
+      const focusDistance = Math.abs(stepCenter - window.innerHeight * 0.52);
+      const focus = Math.max(0, 1 - focusDistance / (window.innerHeight * 0.72));
+      step.style.setProperty("--step-focus", focus.toFixed(3));
+      step.style.setProperty("--step-y", `${((1 - focus) * 54).toFixed(1)}px`);
+      step.style.setProperty("--step-scale", (0.96 + focus * 0.04).toFixed(3));
+      step.style.setProperty("--step-opacity", (0.2 + focus * 0.8).toFixed(3));
+      step.style.setProperty("--step-active-opacity", (0.58 + focus * 0.42).toFixed(3));
+      step.style.setProperty("--step-heading-scale", (0.985 + focus * 0.025).toFixed(3));
+    });
   };
 
   const observer = new IntersectionObserver(
