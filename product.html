@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Caseform 상품 상세</title>
-    <link rel="stylesheet" href="styles.css?v=20260601-white-theme-2" />
+    <link rel="stylesheet" href="styles.css?v=20260602-member-review" />
   </head>
   <body class="product-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -17,6 +17,8 @@
         <a class="brand" href="index.html" data-home-link data-setting="brandName">Caseform</a>
         <div class="nav-links" aria-label="주요 메뉴">
           <a href="products.html" id="collection-link">컬렉션</a>
+          <a href="#reviews">리뷰</a>
+          <a href="account.html" data-account-link>마이페이지</a>
           <a href="index.html#support" id="support-link">배송</a>
           <a href="admin.html">관리자</a>
         </div>
@@ -99,6 +101,43 @@
         </div>
       </section>
 
+      <section class="section reviews-section" id="reviews" aria-labelledby="reviews-title">
+        <div class="section-heading reviews-heading">
+          <p class="eyebrow">Reviews</p>
+          <h2 id="reviews-title">실제 사용감</h2>
+          <p id="reviews-summary">리뷰를 불러오는 중입니다.</p>
+        </div>
+        <div class="reviews-layout">
+          <form class="review-form" id="review-form">
+            <div class="review-form-head">
+              <strong id="review-form-title">리뷰 작성</strong>
+              <span id="review-member-state">로그인 상태 확인 중</span>
+            </div>
+            <label>
+              <span>별점</span>
+              <select id="review-rating" name="rating">
+                <option value="5">★★★★★ 5</option>
+                <option value="4">★★★★☆ 4</option>
+                <option value="3">★★★☆☆ 3</option>
+                <option value="2">★★☆☆☆ 2</option>
+                <option value="1">★☆☆☆☆ 1</option>
+              </select>
+            </label>
+            <label>
+              <span>제목</span>
+              <input id="review-title-input" name="title" type="text" maxlength="48" required />
+            </label>
+            <label>
+              <span>내용</span>
+              <textarea id="review-body-input" name="body" rows="4" maxlength="280" required></textarea>
+            </label>
+            <button class="button primary" id="review-submit" type="submit">리뷰 등록</button>
+            <p class="form-status" id="review-status" aria-live="polite"></p>
+          </form>
+          <div class="review-list" id="review-list"></div>
+        </div>
+      </section>
+
       <section class="section detail-section related-slider-section" aria-labelledby="related-title">
         <div class="section-heading">
           <p class="eyebrow">More from the drop</p>
@@ -113,6 +152,7 @@
     </main>
 
     <script src="site-config.js?v=20260602-ivory-case"></script>
-    <script src="product.js?v=20260601-white-theme-2"></script>
+    <script src="shop.js?v=20260602-member-review"></script>
+    <script src="product.js?v=20260602-member-review"></script>
   </body>
 </html>

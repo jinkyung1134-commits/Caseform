@@ -136,6 +136,9 @@ function applySettings() {
   if (heroMobileAllLink) {
     heroMobileAllLink.href = productsUrl();
   }
+  if (window.CaseformShop) {
+    window.CaseformShop.setupHeaderActions(settings);
+  }
 
   renderHeroSlide(activeHeroSlide, true);
   startHeroSlider();

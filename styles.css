@@ -45,8 +45,14 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 .site-header {
@@ -233,6 +239,10 @@ input {
   color: #100d07;
   font-size: 10px;
   font-weight: 700;
+}
+
+.cart-count[hidden] {
+  display: none;
 }
 
 .hero {
@@ -1948,8 +1958,10 @@ legend,
 .cart-backdrop {
   position: absolute;
   inset: 0;
+  border: 0;
   background: rgba(0, 0, 0, 0.64);
   opacity: 0;
+  padding: 0;
   transition: opacity 180ms ease;
 }
 
@@ -2021,11 +2033,20 @@ legend,
 }
 
 .cart-thumb {
+  display: block;
+  overflow: hidden;
   width: 44px;
   height: 64px;
   border: 4px solid color-mix(in srgb, var(--thumb), #000 12%);
   border-radius: 14px;
   background: var(--thumb);
+}
+
+.cart-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .cart-item strong,
@@ -2051,9 +2072,300 @@ legend,
   min-width: 132px;
 }
 
+.account-page-main {
+  padding: 116px max(20px, calc((100vw - 1180px) / 2)) 72px;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(214, 178, 94, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf6 46%, #ffffff 100%);
+}
+
+.account-hero {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+  margin-bottom: 36px;
+}
+
+.account-hero h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(42px, 7vw, 76px);
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.account-hero p:last-child {
+  max-width: 560px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.account-shell,
+.account-dashboard,
+.reviews-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.account-shell {
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.account-dashboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.account-panel,
+.review-form,
+.review-card {
+  border: 1px solid rgba(23, 20, 17, 0.1);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 44px rgba(23, 20, 17, 0.08);
+}
+
+.account-panel {
+  padding: 22px;
+}
+
+.account-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border: 1px solid rgba(184, 137, 47, 0.2);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+
+.account-tabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.account-tabs button.is-active {
+  background: #171411;
+  color: #ffffff;
+}
+
+.account-form,
+.review-form {
+  display: grid;
+  gap: 14px;
+}
+
+.account-form label,
+.review-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.account-form span,
+.review-form label span {
+  color: #171411;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.account-form input,
+.review-form input,
+.review-form select,
+.review-form textarea {
+  width: 100%;
+  border: 1px solid rgba(184, 137, 47, 0.28);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #171411;
+  padding: 12px 13px;
+  outline: none;
+}
+
+.account-form input:focus,
+.review-form input:focus,
+.review-form select:focus,
+.review-form textarea:focus {
+  border-color: rgba(184, 137, 47, 0.62);
+  box-shadow: 0 0 0 4px rgba(214, 178, 94, 0.12);
+}
+
+.account-form input:disabled,
+.review-form input:disabled,
+.review-form select:disabled,
+.review-form textarea:disabled,
+.review-form button:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.compact-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+}
+
+.form-status {
+  min-height: 22px;
+  margin: 2px 0 0;
+  color: #9a7428;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-heading,
+.account-panel-head,
+.review-form-head,
+.review-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.profile-heading {
+  margin-bottom: 18px;
+}
+
+.profile-heading h2,
+.account-panel-head h2 {
+  margin: 0;
+  color: #171411;
+  font-size: 28px;
+}
+
+.account-panel-head {
+  margin-bottom: 18px;
+}
+
+.account-list {
+  display: grid;
+  gap: 10px;
+}
+
+.account-list-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid rgba(23, 20, 17, 0.08);
+  border-radius: var(--radius);
+  background: #fbfaf7;
+}
+
+.account-list-item strong {
+  color: #171411;
+}
+
+.account-list-item span,
+.account-empty {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.account-empty {
+  padding: 22px 0;
+}
+
+.reviews-section {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(214, 178, 94, 0.12), transparent 32%),
+    #ffffff;
+}
+
+.reviews-heading p:last-child {
+  max-width: 560px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.reviews-layout {
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.review-form {
+  padding: 20px;
+}
+
+.review-form-head strong {
+  color: #171411;
+  font-size: 22px;
+}
+
+.review-form-head span {
+  color: #9a7428;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.review-form textarea {
+  resize: vertical;
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.review-card-head strong {
+  color: #171411;
+  font-size: 18px;
+}
+
+.rating-stars {
+  color: #b8892f;
+  font-size: 14px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.review-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.review-card small,
+.review-empty {
+  color: #8d8578;
+}
+
+.review-empty {
+  margin: 0;
+  padding: 30px 0;
+}
+
 @media (max-width: 940px) {
   .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-shell,
+  .account-dashboard,
+  .reviews-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-form {
+    grid-template-columns: 1fr;
   }
 
   .studio-layout,
@@ -2650,7 +2962,8 @@ legend,
 /* Public white theme */
 body.home-page,
 body.catalog-page,
-body.product-page {
+body.product-page,
+body.account-page {
   background: #ffffff;
   color: var(--ink);
 }
@@ -2956,6 +3269,38 @@ body.product-page {
 }
 
 @media (max-width: 720px) {
+  .account-page-main {
+    padding: 96px 20px 56px;
+  }
+
+  .account-hero {
+    margin-bottom: 26px;
+  }
+
+  .account-hero h1 {
+    font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .account-panel,
+  .review-form,
+  .review-card {
+    padding: 16px;
+  }
+
+  .profile-heading,
+  .review-form-head,
+  .review-card-head {
+    display: grid;
+  }
+
+  .review-form-head span {
+    text-align: left;
+  }
+
+  .cart-panel {
+    width: 100%;
+  }
+
   .home-page .site-header {
     border-bottom-color: rgba(23, 20, 17, 0.1);
     background: rgba(255, 255, 255, 0.92);

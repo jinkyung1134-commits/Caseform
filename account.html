@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caseform 마이페이지</title>
+    <meta name="description" content="Caseform 회원가입, 로그인, 마이페이지, 리뷰 관리 화면." />
+    <link rel="stylesheet" href="styles.css?v=20260602-member-review" />
+  </head>
+  <body class="account-page gold-finish">
+    <header class="site-header" aria-label="상단 메뉴">
+      <nav class="nav">
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <a class="brand" href="index.html" data-home-link data-setting="brandName">Caseform</a>
+        <div class="nav-links" aria-label="주요 메뉴">
+          <a href="products.html" data-products-link>컬렉션</a>
+          <a href="product.html?id=0#reviews">리뷰</a>
+          <a href="account.html" data-account-link>마이페이지</a>
+          <a href="index.html#support" data-support-link>배송</a>
+          <a href="admin.html">관리자</a>
+        </div>
+        <div class="mobile-nav-actions" aria-label="빠른 메뉴">
+          <button class="mobile-icon-button is-account" type="button" aria-label="마이페이지"></button>
+          <button class="mobile-icon-button is-bag" type="button" aria-label="장바구니"></button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="account-page-main">
+      <section class="account-hero" aria-labelledby="account-title">
+        <p class="eyebrow">Account</p>
+        <h1 id="account-title">마이페이지</h1>
+        <p>회원 정보, 장바구니, 내가 남긴 리뷰를 한 곳에서 확인하세요.</p>
+      </section>
+
+      <section class="account-shell" aria-label="회원 영역">
+        <div class="account-panel auth-panel" id="auth-panel">
+          <div class="account-tabs" role="tablist" aria-label="회원 메뉴">
+            <button class="is-active" type="button" data-auth-tab="login">로그인</button>
+            <button type="button" data-auth-tab="signup">회원가입</button>
+          </div>
+
+          <form class="account-form" id="login-form">
+            <label>
+              <span>이메일</span>
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <label>
+              <span>비밀번호</span>
+              <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <button class="button primary" type="submit">로그인</button>
+          </form>
+
+          <form class="account-form is-hidden" id="signup-form">
+            <label>
+              <span>이름</span>
+              <input type="text" name="name" autocomplete="name" required />
+            </label>
+            <label>
+              <span>이메일</span>
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <label>
+              <span>비밀번호</span>
+              <input type="password" name="password" autocomplete="new-password" minlength="4" required />
+            </label>
+            <label>
+              <span>연락처</span>
+              <input type="tel" name="phone" autocomplete="tel" />
+            </label>
+            <button class="button primary" type="submit">가입하기</button>
+          </form>
+          <p class="form-status" id="auth-status" aria-live="polite"></p>
+        </div>
+
+        <div class="account-panel profile-panel is-hidden" id="profile-panel">
+          <div class="profile-heading">
+            <div>
+              <p class="eyebrow">Member</p>
+              <h2 id="member-name">회원명</h2>
+            </div>
+            <button class="button secondary" id="signout-action" type="button">로그아웃</button>
+          </div>
+          <form class="account-form compact-form" id="profile-form">
+            <label>
+              <span>이름</span>
+              <input type="text" name="name" required />
+            </label>
+            <label>
+              <span>연락처</span>
+              <input type="tel" name="phone" />
+            </label>
+            <button class="button primary" type="submit">저장</button>
+          </form>
+          <p class="form-status" id="profile-status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="account-dashboard" aria-label="마이페이지 요약">
+        <article class="account-panel">
+          <div class="account-panel-head">
+            <p class="eyebrow">Cart</p>
+            <h2>장바구니</h2>
+          </div>
+          <div class="account-list" id="account-cart-list"></div>
+        </article>
+        <article class="account-panel">
+          <div class="account-panel-head">
+            <p class="eyebrow">Orders</p>
+            <h2>주문 내역</h2>
+          </div>
+          <div class="account-empty">결제 기능 연결 후 주문 내역이 표시됩니다.</div>
+        </article>
+        <article class="account-panel">
+          <div class="account-panel-head">
+            <p class="eyebrow">Reviews</p>
+            <h2>내 리뷰</h2>
+          </div>
+          <div class="account-list" id="account-review-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="site-config.js?v=20260602-ivory-case"></script>
+    <script src="shop.js?v=20260602-member-review"></script>
+    <script src="account.js?v=20260602-member-review"></script>
+  </body>
+</html>

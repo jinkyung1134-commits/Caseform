@@ -46,6 +46,9 @@ function applySettings() {
   document.querySelectorAll("[data-support-link]").forEach((link) => {
     link.href = indexUrl("#support");
   });
+  if (window.CaseformShop) {
+    window.CaseformShop.setupHeaderActions(settings);
+  }
 }
 
 function renderProducts() {

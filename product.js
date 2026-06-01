@@ -4,6 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
 const product = products[selectedIndex] || products[0];
 const { escapeHtml, mediaSource, productHasMedia, productMediaMarkup } = window.CaseformConfig;
+const shop = window.CaseformShop;
 const detailFallbackImage = "assets/caseform-obsidian-grid-concept.png?v=20260601-scroll-image";
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
@@ -12,6 +13,12 @@ const purchaseSection = document.querySelector("#purchase-section");
 const purchaseStatus = document.querySelector("#purchase-status");
 const deviceSelect = document.querySelector("#device-select");
 const relatedTrack = document.querySelector("#related-products");
+const reviewForm = document.querySelector("#review-form");
+const reviewList = document.querySelector("#review-list");
+const reviewStatus = document.querySelector("#review-status");
+const reviewSummary = document.querySelector("#reviews-summary");
+const reviewMemberState = document.querySelector("#review-member-state");
+const reviewSubmit = document.querySelector("#review-submit");
 
 function formatWon(value) {
   return `${Number(value).toLocaleString("ko-KR")}원`;
@@ -111,6 +118,9 @@ function renderDetail() {
   document.querySelector("#collection-link").href = productsUrl();
   document.querySelector("#support-link").href = indexUrl("#support");
   document.querySelector("[data-home-link]").href = indexUrl("");
+  if (shop) {
+    shop.setupHeaderActions(settings);
+  }
 }
 
 function renderRelated() {
@@ -196,7 +206,7 @@ function setupScrollStory() {
 }
 
 function setupRevealAnimations() {
-  const targets = document.querySelectorAll(".purchase-showcase, .related-card, .section-heading");
+  const targets = document.querySelectorAll(".purchase-showcase, .related-card, .section-heading, .review-form, .review-card");
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -223,11 +233,94 @@ function setupPurchaseFlow() {
   }
 
   document.querySelector("#cart-action").addEventListener("click", () => {
-    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 장바구니 담기 흐름을 연결할 수 있습니다.`;
+    shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
+    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
   });
 
   document.querySelector("#buy-action").addEventListener("click", () => {
-    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 구매 페이지 연결 위치입니다.`;
+    shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
+    shop.openCartDrawer();
+    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
+  });
+}
+
+function renderReviewStars(rating) {
+  const score = Math.min(Math.max(Number(rating || 0), 0), 5);
+  return `${"★".repeat(score)}${"☆".repeat(5 - score)}`;
+}
+
+function renderReviews() {
+  if (!reviewList || !shop) return;
+
+  const reviews = shop.getReviews(selectedIndex);
+  const average = reviews.length
+    ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length
+    : 0;
+
+  reviewSummary.textContent = reviews.length
+    ? `${reviews.length}개의 리뷰 · 평균 ${average.toFixed(1)}점`
+    : "아직 등록된 리뷰가 없습니다.";
+
+  if (!reviews.length) {
+    reviewList.innerHTML = `<p class="review-empty">첫 리뷰를 남겨주세요.</p>`;
+    return;
+  }
+
+  reviewList.innerHTML = reviews
+    .map(
+      (review) => `
+        <article class="review-card reveal-on-scroll">
+          <div class="review-card-head">
+            <strong>${escapeHtml(review.title)}</strong>
+            <span class="rating-stars" aria-label="${review.rating}점">${renderReviewStars(review.rating)}</span>
+          </div>
+          <p>${escapeHtml(review.body)}</p>
+          <small>${escapeHtml(review.author)} · ${new Date(review.createdAt).toLocaleDateString("ko-KR")}</small>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function updateReviewFormState() {
+  if (!reviewForm || !shop) return;
+  const member = shop.currentMember();
+  const fields = reviewForm.querySelectorAll("input, select, textarea");
+
+  fields.forEach((field) => {
+    field.disabled = !member;
+  });
+  reviewSubmit.disabled = !member;
+  reviewSubmit.textContent = member ? "리뷰 등록" : "로그인 후 작성";
+  reviewMemberState.textContent = member ? `${member.name}님으로 작성` : "마이페이지에서 로그인 후 작성 가능";
+}
+
+function setupReviews() {
+  if (!reviewForm || !shop) return;
+  renderReviews();
+  updateReviewFormState();
+  setupRevealAnimations();
+
+  reviewForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const member = shop.currentMember();
+    if (!member) {
+      window.location.href = shop.pageUrl("account.html", settings);
+      return;
+    }
+
+    try {
+      shop.addReview({
+        productIndex: selectedIndex,
+        ...Object.fromEntries(new FormData(reviewForm)),
+      });
+      reviewStatus.textContent = "리뷰가 등록되었습니다.";
+      reviewForm.reset();
+      renderReviews();
+      setupRevealAnimations();
+    } catch (error) {
+      reviewStatus.textContent = error.message;
+    }
   });
 }
 
@@ -267,3 +360,4 @@ setupScrollStory();
 setupRevealAnimations();
 setupPurchaseFlow();
 setupRelatedSlider();
+setupReviews();
