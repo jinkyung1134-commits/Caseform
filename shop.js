@@ -36,6 +36,29 @@
     },
   ];
 
+  const supabaseConfig = window.CASEFORM_SUPABASE || {};
+  const hasSupabaseConfig =
+    Boolean(supabaseConfig.url && supabaseConfig.anonKey) &&
+    !String(supabaseConfig.url).includes("YOUR_SUPABASE") &&
+    !String(supabaseConfig.anonKey).includes("YOUR_SUPABASE");
+  const client =
+    hasSupabaseConfig && window.supabase
+      ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+          },
+        })
+      : null;
+
+  let initPromise = null;
+  let authUser = null;
+  let profileCache = null;
+  let cartCache = [];
+  let reviewCache = null;
+  let authListenerReady = false;
+
   function readJson(key, fallback) {
     try {
       const value = window.localStorage.getItem(key);
@@ -75,6 +98,14 @@
     return `${page}${query}`;
   }
 
+  function isSupabaseEnabled() {
+    return Boolean(client);
+  }
+
+  function dispatchShopUpdate() {
+    window.dispatchEvent(new CustomEvent("caseform:shop-updated"));
+  }
+
   function getMembers() {
     return readJson(keys.members, []);
   }
@@ -87,79 +118,317 @@
     return readJson(keys.session, null);
   }
 
-  function currentMember() {
+  function localCurrentMember() {
     const session = currentSession();
     if (!session || !session.email) return null;
     return getMembers().find((member) => member.email === session.email) || null;
   }
 
-  function signUp({ name, email, password, phone }) {
+  function currentMember() {
+    if (isSupabaseEnabled()) return profileCache;
+    return localCurrentMember();
+  }
+
+  function rowToCartItem(row) {
+    return {
+      id: row.id,
+      productIndex: row.product_index,
+      productName: row.product_name,
+      productImage: row.product_image,
+      price: Number(row.price || 0),
+      device: row.device,
+      quantity: Number(row.quantity || 1),
+      addedAt: row.created_at,
+    };
+  }
+
+  function rowToReview(row) {
+    return {
+      id: row.id,
+      productIndex: row.product_index,
+      userId: row.user_id,
+      author: row.author || "Caseform 회원",
+      rating: Number(row.rating || 5),
+      title: row.title,
+      body: row.body,
+      createdAt: row.created_at,
+    };
+  }
+
+  async function loadProfile() {
+    if (!client || !authUser) {
+      profileCache = null;
+      return null;
+    }
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("id, email, name, phone, created_at")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    profileCache = data || {
+      id: authUser.id,
+      email: authUser.email,
+      name: authUser.user_metadata?.name || authUser.email,
+      phone: authUser.user_metadata?.phone || "",
+    };
+    return profileCache;
+  }
+
+  async function loadCart() {
+    if (!client || !authUser) {
+      cartCache = [];
+      return cartCache;
+    }
+
+    const { data, error } = await client
+      .from("cart_items")
+      .select("id, product_index, product_name, product_image, price, device, quantity, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    cartCache = (data || []).map(rowToCartItem);
+    return cartCache;
+  }
+
+  async function loadReviews() {
+    if (!client) {
+      reviewCache = ensureLocalReviews();
+      return reviewCache;
+    }
+
+    const { data, error } = await client
+      .from("reviews")
+      .select("id, product_index, user_id, author, rating, title, body, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    reviewCache = (data || []).map(rowToReview);
+    return reviewCache;
+  }
+
+  async function refreshRemote(settings) {
+    if (!client) return;
+    await Promise.all([authUser ? loadProfile() : Promise.resolve(null), authUser ? loadCart() : Promise.resolve([]), loadReviews()]);
+    renderCartDrawer(settings || window.caseformActiveSettings);
+    dispatchShopUpdate();
+  }
+
+  async function init(settings) {
+    window.caseformActiveSettings = settings || window.caseformActiveSettings;
+
+    if (!client) {
+      reviewCache = ensureLocalReviews();
+      return { mode: "local" };
+    }
+
+    if (initPromise) return initPromise;
+
+    initPromise = (async () => {
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+
+      authUser = data.session?.user || null;
+      await refreshRemote(settings);
+
+      if (!authListenerReady) {
+        authListenerReady = true;
+        client.auth.onAuthStateChange(async (_event, session) => {
+          authUser = session?.user || null;
+          profileCache = null;
+          cartCache = [];
+          await refreshRemote(window.caseformActiveSettings);
+        });
+      }
+
+      return { mode: "supabase" };
+    })();
+
+    return initPromise;
+  }
+
+  async function signUp({ name, email, password, phone }) {
     const cleanEmail = normalizeEmail(email);
     const cleanName = String(name || "").trim();
     const cleanPassword = String(password || "");
-    const members = getMembers();
+    const cleanPhone = String(phone || "").trim();
 
     if (!cleanName) throw new Error("이름을 입력해주세요.");
     if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("이메일을 확인해주세요.");
     if (cleanPassword.length < 4) throw new Error("비밀번호는 4자 이상 입력해주세요.");
-    if (members.some((member) => member.email === cleanEmail)) throw new Error("이미 가입된 이메일입니다.");
 
-    const member = {
-      id: `member-${Date.now()}`,
-      name: cleanName,
+    if (!client) {
+      const members = getMembers();
+      if (members.some((member) => member.email === cleanEmail)) throw new Error("이미 가입된 이메일입니다.");
+
+      const member = {
+        id: `member-${Date.now()}`,
+        name: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        phone: cleanPhone,
+        createdAt: new Date().toISOString(),
+      };
+
+      members.push(member);
+      setMembers(members);
+      writeJson(keys.session, { email: cleanEmail, signedInAt: new Date().toISOString() });
+      dispatchShopUpdate();
+      return member;
+    }
+
+    const { data, error } = await client.auth.signUp({
       email: cleanEmail,
       password: cleanPassword,
-      phone: String(phone || "").trim(),
-      createdAt: new Date().toISOString(),
-    };
+      options: {
+        data: { name: cleanName, phone: cleanPhone },
+        emailRedirectTo: window.location.href,
+      },
+    });
 
-    members.push(member);
-    setMembers(members);
-    writeJson(keys.session, { email: cleanEmail, signedInAt: new Date().toISOString() });
-    return member;
-  }
+    if (error) throw error;
 
-  function signIn({ email, password }) {
-    const cleanEmail = normalizeEmail(email);
-    const member = getMembers().find((item) => item.email === cleanEmail);
-    if (!member || member.password !== String(password || "")) {
-      throw new Error("이메일 또는 비밀번호를 확인해주세요.");
+    authUser = data.session?.user || null;
+    if (authUser) {
+      await loadProfile();
+      await loadCart();
     }
-    writeJson(keys.session, { email: cleanEmail, signedInAt: new Date().toISOString() });
-    return member;
+
+    dispatchShopUpdate();
+    return {
+      id: data.user?.id,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+      needsEmailConfirmation: Boolean(data.user && !data.session),
+    };
   }
 
-  function signOut() {
-    window.localStorage.removeItem(keys.session);
+  async function signIn({ email, password }) {
+    const cleanEmail = normalizeEmail(email);
+
+    if (!client) {
+      const member = getMembers().find((item) => item.email === cleanEmail);
+      if (!member || member.password !== String(password || "")) {
+        throw new Error("이메일 또는 비밀번호를 확인해주세요.");
+      }
+      writeJson(keys.session, { email: cleanEmail, signedInAt: new Date().toISOString() });
+      dispatchShopUpdate();
+      return member;
+    }
+
+    const { data, error } = await client.auth.signInWithPassword({
+      email: cleanEmail,
+      password: String(password || ""),
+    });
+    if (error) throw new Error("이메일 또는 비밀번호를 확인해주세요.");
+
+    authUser = data.user;
+    await Promise.all([loadProfile(), loadCart()]);
+    dispatchShopUpdate();
+    return profileCache;
   }
 
-  function updateProfile({ name, phone }) {
+  async function signOut() {
+    if (!client) {
+      window.localStorage.removeItem(keys.session);
+      dispatchShopUpdate();
+      return;
+    }
+
+    await client.auth.signOut();
+    authUser = null;
+    profileCache = null;
+    cartCache = [];
+    renderCartDrawer(window.caseformActiveSettings);
+    dispatchShopUpdate();
+  }
+
+  async function updateProfile({ name, phone }) {
     const member = currentMember();
     if (!member) throw new Error("로그인이 필요합니다.");
 
-    const members = getMembers();
-    const nextMembers = members.map((item) =>
-      item.email === member.email
-        ? { ...item, name: String(name || "").trim() || item.name, phone: String(phone || "").trim() }
-        : item,
-    );
-    setMembers(nextMembers);
-    return nextMembers.find((item) => item.email === member.email);
+    const cleanName = String(name || "").trim() || member.name;
+    const cleanPhone = String(phone || "").trim();
+
+    if (!client) {
+      const members = getMembers();
+      const nextMembers = members.map((item) =>
+        item.email === member.email ? { ...item, name: cleanName, phone: cleanPhone } : item,
+      );
+      setMembers(nextMembers);
+      dispatchShopUpdate();
+      return nextMembers.find((item) => item.email === member.email);
+    }
+
+    const { data, error } = await client
+      .from("profiles")
+      .upsert(
+        {
+          id: member.id,
+          email: member.email,
+          name: cleanName,
+          phone: cleanPhone,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      )
+      .select("id, email, name, phone, created_at")
+      .single();
+
+    if (error) throw error;
+    await client.auth.updateUser({ data: { name: cleanName, phone: cleanPhone } });
+    profileCache = data;
+    dispatchShopUpdate();
+    return profileCache;
   }
 
   function getCart() {
+    if (client && authUser) return cartCache;
     return readJson(keys.cart, []);
   }
 
-  function setCart(cart) {
+  function setLocalCart(cart) {
     writeJson(keys.cart, cart);
     renderCartCount();
   }
 
-  function addToCart({ productIndex, product, device }) {
-    const cart = getCart();
+  async function addToCart({ productIndex, product, device }) {
     const index = Number(productIndex || 0);
     const selectedDevice = String(device || "기종 미선택");
+
+    if (client && authUser) {
+      const existing = cartCache.find((item) => Number(item.productIndex) === index && item.device === selectedDevice);
+
+      if (existing) {
+        const { error } = await client
+          .from("cart_items")
+          .update({ quantity: existing.quantity + 1, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("cart_items").insert({
+          user_id: authUser.id,
+          product_index: index,
+          product_name: product.name,
+          product_image: product.image || "",
+          price: Number(product.price || 0),
+          device: selectedDevice,
+          quantity: 1,
+        });
+        if (error) throw error;
+      }
+
+      await loadCart();
+      renderCartDrawer(window.caseformActiveSettings);
+      dispatchShopUpdate();
+      return cartCache;
+    }
+
+    const cart = getCart();
     const existing = cart.find((item) => Number(item.productIndex) === index && item.device === selectedDevice);
 
     if (existing) {
@@ -177,14 +446,23 @@
       });
     }
 
-    setCart(cart);
+    setLocalCart(cart);
     renderCartDrawer(window.caseformActiveSettings);
+    dispatchShopUpdate();
     return cart;
   }
 
-  function removeCartItem(id) {
-    setCart(getCart().filter((item) => item.id !== id));
+  async function removeCartItem(id) {
+    if (client && authUser) {
+      const { error } = await client.from("cart_items").delete().eq("id", id);
+      if (error) throw error;
+      await loadCart();
+    } else {
+      setLocalCart(getCart().filter((item) => item.id !== id));
+    }
+
     renderCartDrawer(window.caseformActiveSettings);
+    dispatchShopUpdate();
   }
 
   function cartCount() {
@@ -195,7 +473,7 @@
     return getCart().reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0);
   }
 
-  function ensureReviews() {
+  function ensureLocalReviews() {
     const saved = readJson(keys.reviews, null);
     if (Array.isArray(saved)) return saved;
     writeJson(keys.reviews, seededReviews);
@@ -203,19 +481,28 @@
   }
 
   function getReviews(productIndex) {
-    return ensureReviews()
+    const source = client ? reviewCache || [] : ensureLocalReviews();
+    return source
       .filter((review) => Number(review.productIndex) === Number(productIndex))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
   function getMemberReviews(email) {
     const cleanEmail = normalizeEmail(email);
-    return ensureReviews()
+    const source = client ? reviewCache || [] : ensureLocalReviews();
+
+    if (client) {
+      return source
+        .filter((review) => profileCache && review.userId === profileCache.id)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    return source
       .filter((review) => normalizeEmail(review.email) === cleanEmail)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
-  function addReview({ productIndex, rating, title, body }) {
+  async function addReview({ productIndex, rating, title, body }) {
     const member = currentMember();
     if (!member) throw new Error("로그인 후 리뷰를 작성할 수 있습니다.");
 
@@ -226,7 +513,22 @@
     if (!cleanTitle) throw new Error("리뷰 제목을 입력해주세요.");
     if (cleanBody.length < 8) throw new Error("리뷰 내용을 조금 더 자세히 입력해주세요.");
 
-    const reviews = ensureReviews();
+    if (client && authUser) {
+      const { error } = await client.from("reviews").insert({
+        product_index: Number(productIndex || 0),
+        user_id: authUser.id,
+        author: member.name || "Caseform 회원",
+        rating: cleanRating,
+        title: cleanTitle,
+        body: cleanBody,
+      });
+      if (error) throw error;
+      await loadReviews();
+      dispatchShopUpdate();
+      return getReviews(productIndex)[0];
+    }
+
+    const reviews = ensureLocalReviews();
     const review = {
       id: `review-${Date.now()}`,
       productIndex: Number(productIndex || 0),
@@ -240,6 +542,8 @@
 
     reviews.push(review);
     writeJson(keys.reviews, reviews);
+    reviewCache = reviews;
+    dispatchShopUpdate();
     return review;
   }
 
@@ -354,6 +658,9 @@
 
   function setupHeaderActions(settings) {
     window.caseformActiveSettings = settings;
+    init(settings).catch(() => {
+      renderCartDrawer(settings);
+    });
 
     document.querySelectorAll("[data-account-link]").forEach((link) => {
       link.href = pageUrl("account.html", settings);
@@ -384,6 +691,8 @@
     keys,
     pageUrl,
     formatWon,
+    isSupabaseEnabled,
+    init,
     currentMember,
     signUp,
     signIn,

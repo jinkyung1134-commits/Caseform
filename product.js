@@ -232,15 +232,25 @@ function setupPurchaseFlow() {
     });
   }
 
-  document.querySelector("#cart-action").addEventListener("click", () => {
-    shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
-    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
+  document.querySelector("#cart-action").addEventListener("click", async () => {
+    purchaseStatus.textContent = "장바구니에 담는 중입니다.";
+    try {
+      await shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
+      purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
+    } catch (error) {
+      purchaseStatus.textContent = error.message || "장바구니에 담지 못했습니다.";
+    }
   });
 
-  document.querySelector("#buy-action").addEventListener("click", () => {
-    shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
-    shop.openCartDrawer();
-    purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
+  document.querySelector("#buy-action").addEventListener("click", async () => {
+    purchaseStatus.textContent = "구매 준비 중입니다.";
+    try {
+      await shop.addToCart({ productIndex: selectedIndex, product, device: deviceSelect.value });
+      shop.openCartDrawer();
+      purchaseStatus.textContent = `${deviceSelect.value} / ${product.name} 상품을 장바구니에 담았습니다.`;
+    } catch (error) {
+      purchaseStatus.textContent = error.message || "구매 준비를 완료하지 못했습니다.";
+    }
   });
 }
 
@@ -295,13 +305,14 @@ function updateReviewFormState() {
   reviewMemberState.textContent = member ? `${member.name}님으로 작성` : "마이페이지에서 로그인 후 작성 가능";
 }
 
-function setupReviews() {
+async function setupReviews() {
   if (!reviewForm || !shop) return;
+  await shop.init(settings);
   renderReviews();
   updateReviewFormState();
   setupRevealAnimations();
 
-  reviewForm.addEventListener("submit", (event) => {
+  reviewForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const member = shop.currentMember();
     if (!member) {
@@ -310,7 +321,8 @@ function setupReviews() {
     }
 
     try {
-      shop.addReview({
+      reviewStatus.textContent = "리뷰를 등록하는 중입니다.";
+      await shop.addReview({
         productIndex: selectedIndex,
         ...Object.fromEntries(new FormData(reviewForm)),
       });
@@ -360,4 +372,6 @@ setupScrollStory();
 setupRevealAnimations();
 setupPurchaseFlow();
 setupRelatedSlider();
-setupReviews();
+setupReviews().catch((error) => {
+  if (reviewStatus) reviewStatus.textContent = error.message || "리뷰를 불러오지 못했습니다.";
+});

@@ -29,7 +29,7 @@ function escapeHtml(value) {
   return window.CaseformConfig.escapeHtml(String(value || ""));
 }
 
-function applySettings() {
+async function applySettings() {
   const root = document.documentElement;
   root.style.setProperty("--accent", settings.colors.accent);
   root.style.setProperty("--accent-dark", settings.colors.accentSoft);
@@ -51,6 +51,7 @@ function applySettings() {
     link.href = indexUrl("#support");
   });
   shop.setupHeaderActions(settings);
+  await shop.init(settings);
 }
 
 function renderAccount() {
@@ -147,10 +148,11 @@ document.querySelectorAll("[data-auth-tab]").forEach((button) => {
   button.addEventListener("click", () => setAuthTab(button.dataset.authTab));
 });
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  authStatus.textContent = "로그인 중입니다.";
   try {
-    shop.signIn(Object.fromEntries(new FormData(loginForm)));
+    await shop.signIn(Object.fromEntries(new FormData(loginForm)));
     authStatus.textContent = "로그인되었습니다.";
     loginForm.reset();
     renderAccount();
@@ -159,11 +161,14 @@ loginForm.addEventListener("submit", (event) => {
   }
 });
 
-signupForm.addEventListener("submit", (event) => {
+signupForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  authStatus.textContent = "가입을 처리하고 있습니다.";
   try {
-    shop.signUp(Object.fromEntries(new FormData(signupForm)));
-    authStatus.textContent = "가입이 완료되었습니다.";
+    const result = await shop.signUp(Object.fromEntries(new FormData(signupForm)));
+    authStatus.textContent = result.needsEmailConfirmation
+      ? "가입 메일을 확인한 뒤 로그인해주세요."
+      : "가입이 완료되었습니다.";
     signupForm.reset();
     renderAccount();
   } catch (error) {
@@ -171,10 +176,11 @@ signupForm.addEventListener("submit", (event) => {
   }
 });
 
-profileForm.addEventListener("submit", (event) => {
+profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  profileStatus.textContent = "저장 중입니다.";
   try {
-    shop.updateProfile(Object.fromEntries(new FormData(profileForm)));
+    await shop.updateProfile(Object.fromEntries(new FormData(profileForm)));
     profileStatus.textContent = "저장되었습니다.";
     renderAccount();
   } catch (error) {
@@ -182,14 +188,23 @@ profileForm.addEventListener("submit", (event) => {
   }
 });
 
-document.querySelector("#signout-action").addEventListener("click", () => {
-  shop.signOut();
+document.querySelector("#signout-action").addEventListener("click", async () => {
+  await shop.signOut();
   profileStatus.textContent = "";
   renderAccount();
 });
 
 window.addEventListener("storage", renderAccount);
+window.addEventListener("caseform:shop-updated", renderAccount);
 
-applySettings();
-setupHeaderMenu();
-renderAccount();
+async function boot() {
+  await applySettings();
+  setupHeaderMenu();
+  renderAccount();
+}
+
+boot().catch((error) => {
+  authStatus.textContent = error.message || "회원 기능을 불러오지 못했습니다.";
+  setupHeaderMenu();
+  renderAccount();
+});
