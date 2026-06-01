@@ -29,6 +29,15 @@ function escapeHtml(value) {
   return window.CaseformConfig.escapeHtml(String(value || ""));
 }
 
+function roleLabel(role) {
+  const labels = {
+    admin: "관리자 계정",
+    manager: "운영 매니저",
+    customer: "고객 계정",
+  };
+  return labels[role] || "고객 계정";
+}
+
 async function applySettings() {
   const root = document.documentElement;
   root.style.setProperty("--accent", settings.colors.accent);
@@ -62,6 +71,7 @@ function renderAccount() {
 
   if (member) {
     document.querySelector("#member-name").textContent = `${member.name}님`;
+    document.querySelector("#member-role").textContent = roleLabel(member.role);
     profileForm.elements.name.value = member.name || "";
     profileForm.elements.phone.value = member.phone || "";
   }

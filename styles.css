@@ -2242,6 +2242,19 @@ legend,
   font-size: 28px;
 }
 
+.account-role {
+  display: inline-flex;
+  width: fit-content;
+  margin: 8px 0 0;
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 54%);
+  border-radius: var(--radius);
+  padding: 5px 9px;
+  background: #fbf7ec;
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .account-panel-head {
   margin-bottom: 18px;
 }

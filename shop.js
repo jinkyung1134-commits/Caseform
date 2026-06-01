@@ -121,7 +121,8 @@
   function localCurrentMember() {
     const session = currentSession();
     if (!session || !session.email) return null;
-    return getMembers().find((member) => member.email === session.email) || null;
+    const member = getMembers().find((item) => item.email === session.email) || null;
+    return member ? { role: "customer", ...member } : null;
   }
 
   function currentMember() {
@@ -163,7 +164,7 @@
 
     const { data, error } = await client
       .from("profiles")
-      .select("id, email, name, phone, created_at")
+      .select("*")
       .eq("id", authUser.id)
       .maybeSingle();
 
@@ -174,7 +175,9 @@
       email: authUser.email,
       name: authUser.user_metadata?.name || authUser.email,
       phone: authUser.user_metadata?.phone || "",
+      role: "customer",
     };
+    profileCache.role = profileCache.role || "customer";
     return profileCache;
   }
 
@@ -270,6 +273,7 @@
         email: cleanEmail,
         password: cleanPassword,
         phone: cleanPhone,
+        role: "customer",
         createdAt: new Date().toISOString(),
       };
 
@@ -303,6 +307,7 @@
       name: cleanName,
       email: cleanEmail,
       phone: cleanPhone,
+      role: "customer",
       needsEmailConfirmation: Boolean(data.user && !data.session),
     };
   }
@@ -376,12 +381,12 @@
         },
         { onConflict: "id" },
       )
-      .select("id, email, name, phone, created_at")
+      .select("*")
       .single();
 
     if (error) throw error;
     await client.auth.updateUser({ data: { name: cleanName, phone: cleanPhone } });
-    profileCache = data;
+    profileCache = { ...data, role: data.role || member.role || "customer" };
     dispatchShopUpdate();
     return profileCache;
   }
@@ -687,6 +692,15 @@
     renderCartDrawer(settings);
   }
 
+  function currentRole() {
+    if (!isSupabaseEnabled()) return "admin";
+    return currentMember()?.role || "guest";
+  }
+
+  function isAdmin() {
+    return currentRole() === "admin";
+  }
+
   window.CaseformShop = {
     keys,
     pageUrl,
@@ -694,6 +708,8 @@
     isSupabaseEnabled,
     init,
     currentMember,
+    currentRole,
+    isAdmin,
     signUp,
     signIn,
     signOut,

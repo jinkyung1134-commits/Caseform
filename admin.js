@@ -2,13 +2,127 @@ const form = document.querySelector("#settings-form");
 const productHost = document.querySelector("#admin-products");
 const statusText = document.querySelector("#save-status");
 const resetButton = document.querySelector("#reset-button");
+const adminGate = document.querySelector("#admin-gate");
+const adminApp = document.querySelector("#admin-app");
+const adminLoginForm = document.querySelector("#admin-login-form");
+const adminGateCopy = document.querySelector("#admin-gate-copy");
+const adminAuthStatus = document.querySelector("#admin-auth-status");
+const adminSignout = document.querySelector("#admin-signout");
+const adminSaveButton = document.querySelector("#admin-save-button");
+const adminProductCount = document.querySelector("#admin-product-count");
+const adminHeroCount = document.querySelector("#admin-hero-count");
+const adminReviewMode = document.querySelector("#admin-review-mode");
+const adminRoleName = document.querySelector("#admin-role-name");
 const imagePreset = form.elements.heroImagePreset || null;
 const homeLinks = [...document.querySelectorAll('a[href="index.html"]')];
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
+const shop = window.CaseformShop || null;
 const MAX_IMAGE_SIZE = 1400;
 const IMAGE_QUALITY = 0.82;
 
 let settings = window.CaseformConfig.load();
+let adminReady = false;
+let adminBootPromise = null;
+
+function roleLabel(role) {
+  const labels = {
+    admin: "관리자",
+    manager: "운영 매니저",
+    customer: "고객",
+    guest: "비로그인",
+  };
+  return labels[role] || role || "확인 전";
+}
+
+function setAdminAuthStatus(message, tone = "neutral") {
+  if (!adminAuthStatus) return;
+  adminAuthStatus.textContent = message;
+  adminAuthStatus.dataset.tone = tone;
+}
+
+function updateAdminDashboard() {
+  const heroProducts = settings.products.filter((product) => product.showInHero);
+  if (adminProductCount) adminProductCount.textContent = String(settings.products.length);
+  if (adminHeroCount) adminHeroCount.textContent = String(heroProducts.length);
+  if (adminReviewMode) adminReviewMode.textContent = shop?.isSupabaseEnabled() ? "Supabase" : "Local";
+  if (adminRoleName) adminRoleName.textContent = roleLabel(shop?.currentRole?.() || "admin");
+}
+
+function renderAdminAccess(access) {
+  const allowed = Boolean(access.allowed);
+  const member = access.member || null;
+  const role = shop?.currentRole?.() || access.role || "guest";
+
+  adminApp.classList.toggle("is-hidden", !allowed);
+  adminSaveButton.hidden = !allowed;
+  adminSaveButton.disabled = !allowed;
+  adminLoginForm.hidden = allowed || access.reason === "forbidden";
+  adminSignout.hidden = !member;
+  adminGate.classList.toggle("is-verified", allowed);
+
+  if (allowed) {
+    adminGateCopy.textContent = access.mode === "local"
+      ? "Supabase 미연결 로컬 관리자 모드입니다. 실제 배포에서는 Supabase 권한으로 보호됩니다."
+      : `${member?.name || member?.email || "관리자"} 계정의 관리자 권한이 확인되었습니다.`;
+    setAdminAuthStatus(`현재 권한: ${roleLabel(role)}`, "success");
+    return;
+  }
+
+  if (access.reason === "forbidden") {
+    adminGateCopy.textContent = `${member?.email || "현재 계정"}은 ${roleLabel(role)} 권한입니다. 관리자 페이지는 admin 권한 계정만 열 수 있습니다.`;
+    setAdminAuthStatus("Supabase에서 해당 계정의 profiles.role 값을 admin으로 지정해야 합니다.", "warning");
+    return;
+  }
+
+  adminGateCopy.textContent = "관리자 계정으로 로그인하면 운영 콘솔이 열립니다.";
+  setAdminAuthStatus("로그인이 필요합니다.", "neutral");
+}
+
+async function resolveAdminAccess() {
+  if (!shop) return { allowed: true, mode: "legacy", role: "admin" };
+
+  await shop.init(settings);
+
+  if (!shop.isSupabaseEnabled()) {
+    return { allowed: true, mode: "local", member: shop.currentMember(), role: "admin" };
+  }
+
+  const member = shop.currentMember();
+  if (!member) return { allowed: false, reason: "signed-out", role: "guest" };
+  if (!shop.isAdmin()) return { allowed: false, reason: "forbidden", member };
+  return { allowed: true, mode: "supabase", member };
+}
+
+async function bootAdmin() {
+  if (adminBootPromise) return adminBootPromise;
+
+  adminBootPromise = (async () => {
+    try {
+      const access = await resolveAdminAccess();
+      renderAdminAccess(access);
+
+      if (access.allowed) {
+        if (!adminReady) {
+          populate();
+          adminReady = true;
+        } else {
+          updateAdminDashboard();
+        }
+      }
+    } catch (error) {
+      adminApp.classList.add("is-hidden");
+      adminSaveButton.disabled = true;
+      adminLoginForm.hidden = false;
+      adminSignout.hidden = true;
+      adminGateCopy.textContent = "관리자 권한을 확인하지 못했습니다.";
+      setAdminAuthStatus(error.message || "다시 로그인해주세요.", "warning");
+    } finally {
+      adminBootPromise = null;
+    }
+  })();
+
+  return adminBootPromise;
+}
 
 function setField(name, value) {
   if (!form.elements[name]) return;
@@ -200,6 +314,7 @@ function populate() {
   syncImagePreset();
   updatePreview();
   updateHomeLinks(settings);
+  updateAdminDashboard();
 }
 
 function collectProducts() {
@@ -355,6 +470,7 @@ function saveMediaDraft() {
     settings = draft;
     updateHomeLinks(draft);
     updateProductPreviews(draft);
+    updateAdminDashboard();
     statusText.textContent = "파일 등록됨";
   } catch (error) {
     console.warn("Caseform media could not be saved.", error);
@@ -391,7 +507,30 @@ function readProductFile(input) {
   reader.readAsDataURL(file);
 }
 
-populate();
+bootAdmin();
+
+adminLoginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!shop) return;
+
+  setAdminAuthStatus("로그인 중입니다.", "neutral");
+
+  try {
+    await shop.signIn(Object.fromEntries(new FormData(adminLoginForm)));
+    adminLoginForm.reset();
+    adminReady = false;
+    await bootAdmin();
+  } catch (error) {
+    setAdminAuthStatus(error.message || "로그인 정보를 확인해주세요.", "warning");
+  }
+});
+
+adminSignout.addEventListener("click", async () => {
+  if (!shop) return;
+  await shop.signOut();
+  adminReady = false;
+  await bootAdmin();
+});
 
 form.addEventListener("input", () => {
   statusText.textContent = "수정 중";
@@ -428,6 +567,7 @@ form.addEventListener("submit", (event) => {
     window.CaseformConfig.save(settings);
     updateHomeLinks(settings);
     updateProductPreviews(settings);
+    updateAdminDashboard();
     statusText.textContent = "저장됨";
   } catch (error) {
     console.warn("Caseform settings could not be saved.", error);
@@ -439,4 +579,8 @@ resetButton.addEventListener("click", () => {
   settings = window.CaseformConfig.reset();
   populate();
   statusText.textContent = "초기화됨";
+});
+
+window.addEventListener("caseform:shop-updated", () => {
+  bootAdmin();
 });
