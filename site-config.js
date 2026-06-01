@@ -3,15 +3,15 @@
 
   const products = [
     {
-      name: "Obsidian Grid",
-      material: "무광 실리콘",
-      color: "#161616",
-      price: 39000,
+      name: "Ivory Grid",
+      material: "사틴 레더",
+      color: "#f3eadb",
+      price: 46000,
       mediaType: "image",
-      image: "assets/caseform-obsidian-grid-concept.png",
+      image: "assets/caseform-ivory-grid-concept.png",
       video: "",
       showInHero: true,
-      description: "미세 패턴 그립과 무광 블랙으로 가장 차분하게 잡히는 기본 세팅입니다.",
+      description: "펄 아이보리 텍스처와 샴페인 골드 링으로 흰 배경에서도 선명하게 돋보이는 모델입니다.",
     },
     {
       name: "Smoke Loop",
