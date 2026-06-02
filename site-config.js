@@ -252,6 +252,9 @@
     },
     integrations: {
       googleMapsApiKey: "",
+      tossClientKey: "",
+      supportEmail: "support@veltier.co",
+      customDomain: "",
     },
     heroEyebrow: "Drop 01 / White Line",
     heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
@@ -358,6 +361,7 @@
 
     if (compact.integrations) {
       compact.integrations.googleMapsApiKey = "";
+      compact.integrations.tossClientKey = "";
     }
 
     compact.products = compact.products.map((product) => {

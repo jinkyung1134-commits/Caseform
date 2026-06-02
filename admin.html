@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20260602-address-search" />
+    <link rel="stylesheet" href="styles.css?v=20260602-commerce-launch" />
     <link rel="stylesheet" href="admin.css?v=20260602-prelaunch" />
   </head>
   <body class="admin-body">
@@ -140,6 +140,9 @@
             <span>발송 준비</span>
           </div>
           <div class="notification-list" id="notification-list"></div>
+          <div class="admin-actions">
+            <button class="button secondary" id="notification-send-button" type="button">자동 발송 시도</button>
+          </div>
           <p class="admin-helper">실제 발송은 다음 단계에서 Supabase Edge Function 또는 이메일 서비스 키를 연결하면 자동화할 수 있습니다.</p>
         </section>
 
@@ -180,6 +183,18 @@
             <label class="wide-field">
               <span>Google Maps API 키</span>
               <input name="googleMapsApiKey" type="text" placeholder="해외 주소 자동완성용 공개 키" autocomplete="off" />
+            </label>
+            <label class="wide-field">
+              <span>Toss Client Key</span>
+              <input name="tossClientKey" type="text" placeholder="test_ck_..." autocomplete="off" />
+            </label>
+            <label>
+              <span>고객센터 이메일</span>
+              <input name="supportEmail" type="email" placeholder="support@veltier.co" />
+            </label>
+            <label>
+              <span>도메인 후보</span>
+              <input name="customDomain" type="text" placeholder="veltier.co" />
             </label>
             <p class="admin-helper wide-field">Google Cloud에서 HTTP 리퍼러 제한을 걸어둔 브라우저용 키만 입력하세요.</p>
           </section>
@@ -297,10 +312,11 @@
       </div>
     </main>
 
-    <script src="site-config.js?v=20260602-address-search"></script>
+    <script src="site-config.js?v=20260602-commerce-launch"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-address-search"></script>
-    <script src="admin.js?v=20260602-address-search"></script>
+    <script src="payments-config.js?v=20260602-commerce-launch"></script>
+    <script src="shop.js?v=20260602-commerce-launch"></script>
+    <script src="admin.js?v=20260602-commerce-launch"></script>
   </body>
 </html>

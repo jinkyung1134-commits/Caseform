@@ -89,6 +89,10 @@ create table if not exists public.orders (
   currency text not null default 'KRW',
   payment_provider text default '',
   provider_payment_id text default '',
+  payment_requested_at timestamptz,
+  payment_approved_at timestamptz,
+  payment_failure_code text default '',
+  payment_failure_message text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -107,7 +111,11 @@ create table if not exists public.order_items (
 );
 
 alter table public.orders
-  add column if not exists country_code text not null default 'KR';
+  add column if not exists country_code text not null default 'KR',
+  add column if not exists payment_requested_at timestamptz,
+  add column if not exists payment_approved_at timestamptz,
+  add column if not exists payment_failure_code text default '',
+  add column if not exists payment_failure_message text default '';
 
 alter table public.profiles enable row level security;
 alter table public.cart_items enable row level security;
@@ -343,11 +351,16 @@ on conflict do nothing;
 -- Commerce operations extension: order management, product inventory, and email notification queue.
 
 alter table public.orders
+  add column if not exists country_code text not null default 'KR',
   add column if not exists tracking_number text default '',
   add column if not exists tracking_url text default '',
   add column if not exists admin_note text default '',
   add column if not exists paid_at timestamptz,
-  add column if not exists shipped_at timestamptz;
+  add column if not exists shipped_at timestamptz,
+  add column if not exists payment_requested_at timestamptz,
+  add column if not exists payment_approved_at timestamptz,
+  add column if not exists payment_failure_code text default '',
+  add column if not exists payment_failure_message text default '';
 
 create table if not exists public.product_variants (
   id uuid primary key default gen_random_uuid(),

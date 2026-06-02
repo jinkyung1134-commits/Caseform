@@ -15,6 +15,8 @@ const paymentState = document.querySelector("#payment-state");
 const paymentProvider = document.querySelector("#payment-provider");
 const paymentCopy = document.querySelector("#payment-copy");
 const { escapeHtml } = window.CaseformConfig;
+const TOSS_SCRIPT_URL = "https://js.tosspayments.com/v2/standard";
+let tossScriptPromise = null;
 
 function indexUrl(hash = "") {
   return `${window.CaseformConfig.urlFor("index.html", settings)}${hash}`;
@@ -26,6 +28,80 @@ function productsUrl() {
 
 function policyUrl(hash = "") {
   return `${window.CaseformConfig.urlFor("policies.html", settings)}${hash}`;
+}
+
+function paymentReturnUrl(state) {
+  const url = new URL("payment-return.html", window.location.href);
+  url.searchParams.set("provider", "toss");
+  url.searchParams.set("state", state);
+  return url.href;
+}
+
+function getTossClientKey() {
+  return String(
+    window.CASEFORM_PAYMENTS?.tossClientKey ||
+      settings.integrations?.tossClientKey ||
+      "",
+  ).trim();
+}
+
+function getCustomerKey() {
+  const member = shop.currentMember();
+  const source = member?.id || member?.email || "guest";
+  return `veltier-${String(source).replace(/[^a-z0-9_-]/gi, "").slice(0, 42) || "guest"}`;
+}
+
+function loadTossScript() {
+  if (window.TossPayments) return Promise.resolve();
+  if (tossScriptPromise) return tossScriptPromise;
+
+  tossScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = TOSS_SCRIPT_URL;
+    script.async = true;
+    script.addEventListener("load", resolve, { once: true });
+    script.addEventListener("error", () => reject(new Error("Toss Payments 스크립트를 불러오지 못했습니다.")), {
+      once: true,
+    });
+    document.head.appendChild(script);
+  });
+
+  return tossScriptPromise;
+}
+
+function orderName(order) {
+  const items = order.items || shop.getCart();
+  const firstItem = items[0];
+  const base = firstItem?.productName || "VELTIER Case";
+  return items.length > 1 ? `${base} 외 ${items.length - 1}건` : base;
+}
+
+async function startTossPayment(order) {
+  const clientKey = getTossClientKey();
+  if (!clientKey) {
+    paymentState.textContent = "Toss 테스트 키 필요";
+    paymentCopy.textContent = "payments-config.js 또는 관리자 설정에 Toss Client Key를 넣으면 테스트 결제창이 열립니다.";
+    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.`;
+    return false;
+  }
+
+  await loadTossScript();
+  const tossPayments = window.TossPayments(clientKey);
+  const payment = tossPayments.payment({ customerKey: getCustomerKey() });
+  await payment.requestPayment({
+    method: "CARD",
+    amount: {
+      currency: order.currency || "KRW",
+      value: Math.round(Number(order.total || 0)),
+    },
+    orderId: order.orderNumber,
+    orderName: orderName(order),
+    successUrl: paymentReturnUrl("success"),
+    failUrl: paymentReturnUrl("fail"),
+    customerEmail: order.email,
+    customerName: order.recipientName,
+  });
+  return true;
 }
 
 async function hydrateProductSettings() {
@@ -133,14 +209,18 @@ function renderSummary() {
 }
 
 function updatePaymentCopy() {
+  const tossReady = Boolean(getTossClientKey());
   const labels = {
     manual: ["관리자 확인 결제", "관리자가 주문을 확인한 뒤 결제 상태를 변경합니다."],
-    toss: ["Toss Payments 연결 준비", "국내 카드/간편결제 연결 시 이 주문 정보로 Toss 결제창을 열 수 있습니다."],
-    stripe: ["Stripe 연결 준비", "해외 카드 결제 연결 시 이 주문 정보로 Stripe Checkout을 열 수 있습니다."],
+    toss: tossReady
+      ? ["Toss Payments 테스트 결제", "주문 생성 후 Toss 테스트 결제창으로 이동합니다."]
+      : ["Toss Payments 키 필요", "Toss 테스트 Client Key를 넣으면 결제창을 열 수 있습니다."],
+    paypal: ["PayPal 준비", "해외 결제 보조 수단입니다. 실제 연결은 사업자/계정 준비 후 진행합니다."],
   };
   const [title, copy] = labels[paymentProvider?.value] || labels.manual;
   paymentState.textContent = title;
   paymentCopy.textContent = copy;
+  orderSubmit.textContent = paymentProvider?.value === "toss" ? "주문 후 Toss 결제" : "주문 생성";
 }
 
 checkoutForm.addEventListener("submit", async (event) => {
@@ -164,8 +244,14 @@ checkoutForm.addEventListener("submit", async (event) => {
         isDefault: true,
       });
     }
-    checkoutStatus.textContent = `주문 ${order.orderNumber}이 생성되었습니다.`;
-    paymentState.textContent = `주문 ${order.orderNumber} · 결제 연결 대기`;
+    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.`;
+    paymentState.textContent = `주문 ${order.orderNumber} · 결제 전`;
+    if (formValues.paymentProvider === "toss") {
+      const started = await startTossPayment(order);
+      if (started) {
+        checkoutStatus.textContent = "Toss 결제창으로 이동합니다.";
+      }
+    }
     renderSummary();
   } catch (error) {
     checkoutStatus.textContent = error.message || "주문을 생성하지 못했습니다.";

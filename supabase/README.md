@@ -38,6 +38,15 @@ window.CASEFORM_SUPABASE = {
 
 새 스키마를 실행한 뒤 관리자 페이지에서 상품을 저장하면 현재 상품 목록이 Supabase `products` 테이블로 동기화됩니다.
 
+## 결제와 이메일 자동화
+
+Toss Payments 결제 승인과 이메일 발송은 Supabase Edge Function으로 처리합니다.
+
+- `confirm-toss-payment`: Toss 결제 승인 서버 검증 후 주문을 `paid`로 변경합니다.
+- `send-notification-email`: `notification_events`의 대기 메일을 이메일 서비스로 발송합니다.
+
+배포 명령과 필요한 secret 이름은 `docs/commerce-launch.md`를 참고하세요. Toss Secret Key, Resend API Key, Supabase service role key는 절대 브라우저 파일에 넣지 않습니다.
+
 ## 첫 관리자 지정
 
 1. 사이트에서 실제 관리자 이메일로 회원가입합니다.

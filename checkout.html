@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER 주문서</title>
-    <meta name="description" content="VELTIER 주문 정보와 배송지를 확인하는 체크아웃 화면." />
+    <meta name="description" content="VELTIER 주문 정보와 배송지, 결제 방식을 확인하는 체크아웃 화면." />
     <link rel="canonical" href="https://jinkyung1134-commits.github.io/Caseform/checkout.html" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="VELTIER 주문서" />
-    <meta property="og:description" content="VELTIER 주문 정보와 배송지를 확인하는 체크아웃 화면." />
+    <meta property="og:description" content="VELTIER 주문 정보와 배송지, 결제 방식을 확인하는 체크아웃 화면." />
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/checkout.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-address-search" />
+    <link rel="stylesheet" href="styles.css?v=20260602-commerce-launch" />
   </head>
   <body class="checkout-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -42,7 +42,7 @@
       <section class="checkout-hero" aria-labelledby="checkout-title">
         <p class="eyebrow">Checkout</p>
         <h1 id="checkout-title">주문 정보를 확인하세요.</h1>
-        <p>결제 모듈 연결 전 단계입니다. 지금은 주문 대기 데이터를 Supabase에 생성합니다.</p>
+        <p>주문을 먼저 생성한 뒤 선택한 결제 방식으로 이동합니다.</p>
       </section>
 
       <section class="checkout-layout" aria-label="주문서">
@@ -95,8 +95,8 @@
             <span>결제 방식</span>
             <select name="paymentProvider" id="payment-provider">
               <option value="manual">관리자 확인 결제</option>
-              <option value="toss">Toss Payments 준비</option>
-              <option value="stripe">Stripe 준비</option>
+              <option value="toss">Toss Payments 테스트</option>
+              <option value="paypal">PayPal 준비</option>
             </select>
           </label>
           <button class="button primary" id="order-submit" type="submit">주문 생성</button>
@@ -125,19 +125,20 @@
           </dl>
           <div class="payment-ready">
             <p class="eyebrow">Payment</p>
-            <strong id="payment-state">결제사 연결 대기</strong>
+            <strong id="payment-state">결제 전 주문 생성 대기</strong>
             <p id="payment-copy">관리자가 주문을 확인한 뒤 결제 상태를 변경합니다.</p>
           </div>
         </aside>
       </section>
     </main>
 
-    <script src="site-config.js?v=20260602-address-search"></script>
+    <script src="site-config.js?v=20260602-commerce-launch"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-address-search"></script>
+    <script src="shop.js?v=20260602-commerce-launch"></script>
     <script src="maps-config.js?v=20260602-address-search"></script>
+    <script src="payments-config.js?v=20260602-commerce-launch"></script>
     <script src="address-search.js?v=20260602-address-search"></script>
-    <script src="checkout.js?v=20260602-address-search"></script>
+    <script src="checkout.js?v=20260602-commerce-launch"></script>
   </body>
 </html>

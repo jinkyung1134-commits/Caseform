@@ -2697,6 +2697,66 @@ legend,
   line-height: 1.5;
 }
 
+.payment-return-main {
+  min-height: 100vh;
+}
+
+.payment-result-panel {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.payment-result-panel h2 {
+  margin: 0;
+  color: #171411;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: 0;
+}
+
+.payment-result-panel p:not(.eyebrow) {
+  margin: 0;
+  color: #5f594f;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.payment-result-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.payment-result-meta div {
+  border: 1px solid rgba(184, 137, 47, 0.18);
+  border-radius: var(--radius);
+  padding: 13px;
+  background: #fbf7ec;
+}
+
+.payment-result-meta span,
+.payment-result-meta strong {
+  display: block;
+}
+
+.payment-result-meta span {
+  color: #8d7b62;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.payment-result-meta strong {
+  margin-top: 5px;
+  color: #171411;
+  word-break: break-all;
+}
+
+.payment-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .reviews-section {
   background:
     radial-gradient(circle at 18% 22%, rgba(214, 178, 94, 0.12), transparent 32%),
@@ -3735,6 +3795,10 @@ body.account-page {
   }
 
   .address-lookup-row {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-result-meta {
     grid-template-columns: 1fr;
   }
 

@@ -7,7 +7,11 @@ alter table public.orders
   add column if not exists tracking_url text default '',
   add column if not exists admin_note text default '',
   add column if not exists paid_at timestamptz,
-  add column if not exists shipped_at timestamptz;
+  add column if not exists shipped_at timestamptz,
+  add column if not exists payment_requested_at timestamptz,
+  add column if not exists payment_approved_at timestamptz,
+  add column if not exists payment_failure_code text default '',
+  add column if not exists payment_failure_message text default '';
 
 create table if not exists public.product_variants (
   id uuid primary key default gen_random_uuid(),

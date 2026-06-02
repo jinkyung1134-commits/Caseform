@@ -27,6 +27,7 @@ const inventoryStatus = document.querySelector("#inventory-status");
 const lowStockList = document.querySelector("#low-stock-list");
 const adminReviewList = document.querySelector("#admin-review-list");
 const notificationList = document.querySelector("#notification-list");
+const notificationSendButton = document.querySelector("#notification-send-button");
 const emailTemplateList = document.querySelector("#email-template-list");
 const opsChecklist = document.querySelector("#ops-checklist");
 const opsStatus = document.querySelector("#ops-status");
@@ -65,6 +66,7 @@ const paymentStatuses = {
 const paymentProviders = {
   manual: "관리자 확인",
   toss: "Toss Payments",
+  paypal: "PayPal",
   stripe: "Stripe",
 };
 
@@ -139,6 +141,19 @@ function paymentProviderLabel(provider) {
   return paymentProviders[provider] || provider || "관리자 확인";
 }
 
+function dateLabel(value) {
+  return value ? new Date(value).toLocaleString("ko-KR") : "기록 없음";
+}
+
+function commerceConfigStatus() {
+  const tossClientKey = settings.integrations?.tossClientKey || window.CASEFORM_PAYMENTS?.tossClientKey || "";
+  return {
+    tossClientKey: tossClientKey ? "입력됨" : "미입력",
+    supportEmail: settings.integrations?.supportEmail || "미입력",
+    customDomain: settings.integrations?.customDomain || "도메인 선택 전",
+  };
+}
+
 function renderAdminOrders() {
   if (!adminOrders || !shop?.getOrders) return;
 
@@ -177,6 +192,15 @@ function renderAdminOrders() {
             <span>${escapeHtml(order.phone)}</span>
             <span>${escapeHtml(order.email)}</span>
             <span>${escapeHtml([order.countryCode || "KR", order.postalCode, order.address1, order.address2].filter(Boolean).join(" "))}</span>
+          </div>
+          <div class="admin-order-meta">
+            <span>결제 요청: ${escapeHtml(dateLabel(order.paymentRequestedAt))}</span>
+            <span>결제 승인: ${escapeHtml(dateLabel(order.paymentApprovedAt || order.paidAt))}</span>
+            ${
+              order.paymentFailureMessage
+                ? `<span>실패: ${escapeHtml([order.paymentFailureCode, order.paymentFailureMessage].filter(Boolean).join(" / "))}</span>`
+                : `<span>실패 기록 없음</span>`
+            }
           </div>
           <div class="admin-order-controls">
             <label>
@@ -396,6 +420,8 @@ function renderEmailTemplates() {
 function renderOpsChecklist() {
   if (!opsChecklist) return;
   const policyHasPlaceholders = true;
+  const commerceStatus = commerceConfigStatus();
+  const pendingNotifications = shop?.getNotifications?.().filter((event) => event.status === "pending").length || 0;
   const checks = [
     ["Supabase 연결", shop?.isSupabaseEnabled?.() ? "완료" : "로컬 모드"],
     ["관리자 권한", shop?.isAdmin?.() ? "확인됨" : "확인 필요"],
@@ -403,8 +429,10 @@ function renderOpsChecklist() {
     ["메인 노출", `${settings.products.filter((product) => product.showInHero).length}개`],
     ["재고 주의", `${shop?.getInventory?.().filter((item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0)).length || 0}개`],
     ["운영 정책", policyHasPlaceholders ? "사업자 정보 입력 전" : "완료"],
-    ["PG 연결", "나중에 진행"],
-    ["이메일 자동발송", "템플릿 준비됨"],
+    ["Toss Client Key", commerceStatus.tossClientKey],
+    ["이메일 대기열", `${pendingNotifications}건 대기`],
+    ["고객센터 이메일", commerceStatus.supportEmail],
+    ["도메인", commerceStatus.customDomain],
   ];
 
   opsChecklist.innerHTML = checks
@@ -713,6 +741,9 @@ function populate() {
   setField("brandName", settings.brandName);
   setField("pageTitle", settings.pageTitle);
   setField("googleMapsApiKey", settings.integrations?.googleMapsApiKey || "");
+  setField("tossClientKey", settings.integrations?.tossClientKey || window.CASEFORM_PAYMENTS?.tossClientKey || "");
+  setField("supportEmail", settings.integrations?.supportEmail || "");
+  setField("customDomain", settings.integrations?.customDomain || "");
   setField("heroTitle", settings.heroTitle);
   setField("heroSubtitle", settings.heroSubtitle);
   setField("heroSpecs", settings.heroSpecs.join(", "));
@@ -864,6 +895,9 @@ function collectSettings() {
     },
     integrations: {
       googleMapsApiKey: form.elements.googleMapsApiKey?.value.trim() || "",
+      tossClientKey: form.elements.tossClientKey?.value.trim() || "",
+      supportEmail: form.elements.supportEmail?.value.trim() || "",
+      customDomain: form.elements.customDomain?.value.trim() || "",
     },
     heroEyebrow: settings.heroEyebrow,
     heroTitle: form.elements.heroTitle ? form.elements.heroTitle.value.trim() : settings.heroTitle,
@@ -1172,6 +1206,25 @@ if (notificationList) {
     } catch (error) {
       setAdminAuthStatus(error.message || "알림 상태 변경에 실패했습니다.", "warning");
       button.disabled = false;
+    }
+  });
+}
+
+if (notificationSendButton) {
+  notificationSendButton.addEventListener("click", async () => {
+    if (!shop?.invokeFunction) return;
+    notificationSendButton.disabled = true;
+    notificationSendButton.textContent = "발송 시도 중";
+    try {
+      const result = await shop.invokeFunction("send-notification-email", { limit: 10 });
+      await shop.refresh(settings);
+      renderOperationPanels();
+      opsStatus.textContent = `이메일 ${Number(result.sent || 0)}건을 발송 처리했습니다.`;
+    } catch (error) {
+      opsStatus.textContent = error.message || "이메일 자동 발송을 실행하지 못했습니다.";
+    } finally {
+      notificationSendButton.disabled = false;
+      notificationSendButton.textContent = "자동 발송 시도";
     }
   });
 }

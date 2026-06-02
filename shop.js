@@ -237,6 +237,10 @@
       currency: row.currency || "KRW",
       paymentProvider: row.payment_provider || "",
       providerPaymentId: row.provider_payment_id || "",
+      paymentRequestedAt: row.payment_requested_at || "",
+      paymentApprovedAt: row.payment_approved_at || row.paid_at || "",
+      paymentFailureCode: row.payment_failure_code || "",
+      paymentFailureMessage: row.payment_failure_message || "",
       trackingNumber: row.tracking_number || "",
       trackingUrl: row.tracking_url || "",
       adminNote: row.admin_note || "",
@@ -1214,6 +1218,17 @@
     return updated;
   }
 
+  async function invokeFunction(functionName, body = {}) {
+    if (!client) throw new Error("Supabase 연결 후 서버 기능을 호출할 수 있습니다.");
+    const { data, error } = await client.functions.invoke(functionName, { body });
+    if (error) throw error;
+    return data;
+  }
+
+  async function refresh(settings) {
+    await refreshRemote(settings || window.caseformActiveSettings);
+  }
+
   async function createOrder({
     recipientName,
     phone,
@@ -1237,9 +1252,13 @@
     const subtotal = cartTotal();
     const shippingFee = subtotal >= 30000 ? 0 : 3000;
     const total = subtotal + shippingFee;
+    const cleanPaymentProvider = String(paymentProvider || "manual").trim();
+    const isExternalPayment = ["toss", "paypal", "stripe"].includes(cleanPaymentProvider);
 
     const orderPayload = {
       user_id: authUser.id,
+      status: "pending_payment",
+      payment_status: isExternalPayment ? "ready" : "not_started",
       recipient_name: String(recipientName || member.name || "").trim(),
       phone: String(phone || member.phone || "").trim(),
       email: normalizeEmail(email || member.email),
@@ -1251,15 +1270,31 @@
       subtotal,
       shipping_fee: shippingFee,
       total,
-      payment_provider: String(paymentProvider || "manual").trim(),
+      payment_provider: cleanPaymentProvider,
+      payment_requested_at: isExternalPayment ? new Date().toISOString() : null,
     };
 
-    let { data: order, error: orderError } = await client.from("orders").insert(orderPayload).select("*").single();
-    if (isMissingColumn(orderError, "country_code")) {
-      const { country_code: _countryCode, ...fallbackPayload } = orderPayload;
-      const retry = await client.from("orders").insert(fallbackPayload).select("*").single();
-      order = retry.data;
-      orderError = retry.error;
+    const optionalOrderColumns = [
+      "country_code",
+      "payment_requested_at",
+      "payment_approved_at",
+      "payment_failure_code",
+      "payment_failure_message",
+    ];
+    let insertPayload = { ...orderPayload };
+    let order = null;
+    let orderError = null;
+
+    for (let attempt = 0; attempt <= optionalOrderColumns.length; attempt += 1) {
+      const result = await client.from("orders").insert(insertPayload).select("*").single();
+      order = result.data;
+      orderError = result.error;
+      if (!orderError) break;
+
+      const missingColumn = optionalOrderColumns.find((column) => isMissingColumn(orderError, column));
+      if (!missingColumn || !(missingColumn in insertPayload)) break;
+      const { [missingColumn]: _missing, ...nextPayload } = insertPayload;
+      insertPayload = nextPayload;
     }
 
     if (orderError) throw orderError;
@@ -1282,7 +1317,9 @@
       order,
       eventType: "order_created",
       subject: `[VELTIER] 주문 ${order.order_number}이 접수되었습니다`,
-      body: `주문 금액 ${formatWon(total)}의 주문이 접수되었습니다. 결제 상태를 확인해주세요.`,
+      body: isExternalPayment
+        ? `주문 금액 ${formatWon(total)}의 결제 전 주문이 생성되었습니다. 결제 승인 상태를 확인해주세요.`
+        : `주문 금액 ${formatWon(total)}의 주문이 접수되었습니다. 결제 상태를 확인해주세요.`,
     });
 
     await client.from("cart_items").delete().eq("user_id", authUser.id);
@@ -1597,6 +1634,8 @@
     getNotifications,
     updateNotificationStatus,
     updateOrder,
+    invokeFunction,
+    refresh,
     createOrder,
     setupHeaderActions,
     renderCartDrawer,
