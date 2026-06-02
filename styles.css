@@ -2334,6 +2334,17 @@ legend,
   line-height: 1.55;
 }
 
+.account-order-item small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.account-order-item a {
+  color: var(--gold-dark);
+  font-weight: 900;
+}
+
 .account-empty {
   padding: 22px 0;
 }
@@ -2401,6 +2412,7 @@ legend,
 }
 
 .checkout-form input,
+.checkout-form select,
 .checkout-form textarea {
   width: 100%;
   border: 1px solid rgba(23, 20, 17, 0.14);
@@ -2412,9 +2424,124 @@ legend,
 }
 
 .checkout-form input:focus,
+.checkout-form select:focus,
 .checkout-form textarea:focus {
   border-color: color-mix(in srgb, var(--gold), transparent 20%);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold), transparent 82%);
+}
+
+.policy-main {
+  min-height: 100vh;
+  padding: 128px clamp(18px, 4vw, 64px) 72px;
+  background:
+    radial-gradient(circle at 84% 8%, rgba(214, 178, 94, 0.14), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf6 48%, #ffffff 100%);
+}
+
+.policy-hero {
+  max-width: 880px;
+  margin-bottom: 30px;
+}
+
+.policy-hero h1 {
+  margin: 0;
+  color: #171411;
+  font-size: clamp(52px, 8vw, 104px);
+  line-height: 0.92;
+}
+
+.policy-hero p:not(.eyebrow) {
+  max-width: 680px;
+  color: #5f594f;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.policy-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 34px;
+}
+
+.policy-jump a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(184, 137, 47, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #4b453c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.policy-section {
+  scroll-margin-top: 96px;
+  padding: 28px;
+  border: 1px solid rgba(184, 137, 47, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 44px rgba(23, 20, 17, 0.06);
+}
+
+.policy-section h2 {
+  margin: 0 0 14px;
+  color: #171411;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1;
+}
+
+.policy-section p,
+.policy-section li {
+  color: #5f594f;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.policy-section ul {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding-left: 18px;
+}
+
+.business-section {
+  grid-column: 1 / -1;
+}
+
+.business-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+}
+
+.business-info div {
+  padding: 14px;
+  border: 1px solid rgba(184, 137, 47, 0.18);
+  border-radius: 8px;
+  background: #fffdf8;
+}
+
+.business-info dt {
+  color: #9a7428;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.business-info dd {
+  margin: 6px 0 0;
+  color: #171411;
+  font-weight: 800;
 }
 
 .checkout-summary {
@@ -3496,6 +3623,27 @@ body.account-page {
 }
 
 @media (max-width: 720px) {
+  .policy-main {
+    padding: 104px 16px 54px;
+  }
+
+  .policy-hero h1 {
+    font-size: 48px;
+  }
+
+  .policy-hero p:not(.eyebrow) {
+    font-size: 15px;
+  }
+
+  .policy-grid,
+  .business-info {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-section {
+    padding: 18px;
+  }
+
   .account-page-main {
     padding: 96px 20px 56px;
   }

@@ -6,6 +6,16 @@
     reviews: "caseform-reviews-v1",
   };
   const productMediaBucket = "product-media";
+  const deviceOptions = [
+    "iPhone 16 Pro",
+    "iPhone 16",
+    "iPhone 15 Pro",
+    "iPhone 15",
+    "iPhone 14 Pro",
+    "iPhone 14",
+    "Galaxy S25",
+    "Galaxy S24",
+  ];
 
   const seededReviews = [
     {
@@ -60,6 +70,10 @@
   let reviewCache = null;
   let productCache = null;
   let orderCache = [];
+  let inventoryCache = [];
+  let notificationCache = [];
+  let inventoryRemoteReady = false;
+  let notificationRemoteReady = false;
   let authListenerReady = false;
 
   function readJson(key, fallback) {
@@ -208,7 +222,15 @@
       shippingFee: Number(row.shipping_fee || 0),
       total: Number(row.total || 0),
       currency: row.currency || "KRW",
+      paymentProvider: row.payment_provider || "",
+      providerPaymentId: row.provider_payment_id || "",
+      trackingNumber: row.tracking_number || "",
+      trackingUrl: row.tracking_url || "",
+      adminNote: row.admin_note || "",
+      paidAt: row.paid_at || "",
+      shippedAt: row.shipped_at || "",
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
       items: (row.order_items || []).map((item) => ({
         id: item.id,
         productIndex: item.product_index,
@@ -219,6 +241,59 @@
         price: Number(item.price || 0),
         lineTotal: Number(item.line_total || 0),
       })),
+    };
+  }
+
+  function rowToInventory(row) {
+    return {
+      id: row.id,
+      productIndex: Number(row.product_index || 0),
+      device: row.device,
+      sku: row.sku || "",
+      stockQuantity: Number(row.stock_quantity || 0),
+      lowStockThreshold: Number(row.low_stock_threshold || 3),
+      isAvailable: row.is_available !== false,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  function inventoryToRow(item) {
+    return {
+      product_index: Number(item.productIndex || 0),
+      device: String(item.device || "기종 미선택"),
+      sku: String(item.sku || ""),
+      stock_quantity: Math.max(0, Number(item.stockQuantity || 0)),
+      low_stock_threshold: Math.max(0, Number(item.lowStockThreshold || 0)),
+      is_available: item.isAvailable !== false,
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  function defaultInventoryForProducts(products = []) {
+    return products.flatMap((product, productIndex) =>
+      deviceOptions.map((device) => ({
+        productIndex,
+        device,
+        sku: `VT-${String(productIndex + 1).padStart(3, "0")}-${device.replace(/[^A-Z0-9]/gi, "").toUpperCase()}`,
+        stockQuantity: product?.isActive === false ? 0 : 12,
+        lowStockThreshold: 3,
+        isAvailable: product?.isActive !== false,
+      })),
+    );
+  }
+
+  function rowToNotification(row) {
+    return {
+      id: row.id,
+      orderId: row.order_id,
+      userId: row.user_id,
+      eventType: row.event_type,
+      recipientEmail: row.recipient_email,
+      subject: row.subject,
+      body: row.body,
+      status: row.status,
+      createdAt: row.created_at,
+      sentAt: row.sent_at,
     };
   }
 
@@ -342,11 +417,40 @@
     return productCache;
   }
 
+  async function loadInventory(settings) {
+    const products = productCache || (settings && settings.products) || [];
+    const fallbackInventory = defaultInventoryForProducts(products);
+
+    if (!client) {
+      inventoryCache = fallbackInventory;
+      inventoryRemoteReady = false;
+      return inventoryCache;
+    }
+
+    const { data, error } = await client
+      .from("product_variants")
+      .select("id, product_index, device, sku, stock_quantity, low_stock_threshold, is_available, updated_at")
+      .order("product_index", { ascending: true })
+      .order("device", { ascending: true });
+
+    if (error) {
+      console.warn("VELTIER inventory could not be loaded.", error);
+      inventoryCache = fallbackInventory;
+      inventoryRemoteReady = false;
+      return inventoryCache;
+    }
+
+    inventoryRemoteReady = true;
+    inventoryCache = data && data.length ? data.map(rowToInventory) : fallbackInventory;
+    return inventoryCache;
+  }
+
   async function getProductSettings(settings) {
     const baseSettings = window.CaseformConfig
       ? window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, settings)
       : settings;
     const products = await loadProducts(baseSettings);
+    await loadInventory({ ...baseSettings, products });
     return { ...baseSettings, products };
   }
 
@@ -423,12 +527,43 @@
     return orderCache;
   }
 
+  async function loadNotifications() {
+    if (!client || !authUser || !isAdmin()) {
+      notificationCache = [];
+      return notificationCache;
+    }
+
+    const { data, error } = await client
+      .from("notification_events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn("VELTIER notifications could not be loaded.", error);
+      notificationCache = [];
+      notificationRemoteReady = false;
+      return notificationCache;
+    }
+
+    notificationRemoteReady = true;
+    notificationCache = (data || []).map(rowToNotification);
+    return notificationCache;
+  }
+
   async function refreshRemote(settings) {
     if (!client) return;
+    if (authUser) {
+      await loadProfile();
+    } else {
+      profileCache = null;
+    }
+
     await Promise.all([
-      authUser ? loadProfile() : Promise.resolve(null),
       authUser ? loadCart() : Promise.resolve([]),
       authUser ? loadOrders() : Promise.resolve([]),
+      authUser && isAdmin() ? loadNotifications() : Promise.resolve([]),
+      loadInventory(settings || window.caseformActiveSettings),
       loadReviews(),
     ]);
     renderCartDrawer(settings || window.caseformActiveSettings);
@@ -648,6 +783,12 @@
   async function addToCart({ productIndex, product, device }) {
     const index = Number(productIndex || 0);
     const selectedDevice = String(device || "기종 미선택");
+    const existingQuantity =
+      getCart().find((item) => Number(item.productIndex) === index && item.device === selectedDevice)?.quantity || 0;
+
+    if (!isVariantPurchasable(index, selectedDevice, Number(existingQuantity || 0) + 1)) {
+      throw new Error(`${product.name} / ${selectedDevice} 재고를 확인해주세요.`);
+    }
 
     if (client && authUser) {
       const existing = cartCache.find((item) => Number(item.productIndex) === index && item.device === selectedDevice);
@@ -726,13 +867,165 @@
     return orderCache;
   }
 
-  async function createOrder({ recipientName, phone, email, postalCode, address1, address2, deliveryNote }) {
+  function getNotifications() {
+    return notificationCache;
+  }
+
+  function getInventory() {
+    return inventoryCache;
+  }
+
+  function getDeviceOptions() {
+    return [...deviceOptions];
+  }
+
+  function getProductInventory(productIndex) {
+    const index = Number(productIndex || 0);
+    const rows = inventoryCache.filter((item) => Number(item.productIndex) === index);
+    if (rows.length) return rows;
+    return defaultInventoryForProducts(productCache || []).filter((item) => Number(item.productIndex) === index);
+  }
+
+  function getVariant(productIndex, device) {
+    return getProductInventory(productIndex).find((item) => item.device === device) || null;
+  }
+
+  function isVariantPurchasable(productIndex, device, quantity = 1) {
+    const variant = getVariant(productIndex, device);
+    if (!variant) return true;
+    return variant.isAvailable && Number(variant.stockQuantity || 0) >= Number(quantity || 1);
+  }
+
+  async function saveInventory(productIndex, items) {
+    if (!client) {
+      const nextItems = (items || []).map((item) => ({
+        ...item,
+        productIndex: Number(productIndex || item.productIndex || 0),
+      }));
+      inventoryCache = [
+        ...inventoryCache.filter((item) => Number(item.productIndex) !== Number(productIndex)),
+        ...nextItems,
+      ];
+      dispatchShopUpdate();
+      return getProductInventory(productIndex);
+    }
+
+    if (!isAdmin()) throw new Error("재고 관리는 관리자 권한이 필요합니다.");
+
+    const rows = (items || []).map((item) =>
+      inventoryToRow({
+        ...item,
+        productIndex: Number(productIndex || item.productIndex || 0),
+      }),
+    );
+
+    const { data, error } = await client
+      .from("product_variants")
+      .upsert(rows, { onConflict: "product_index,device" })
+      .select("id, product_index, device, sku, stock_quantity, low_stock_threshold, is_available, updated_at")
+      .order("device", { ascending: true });
+
+    if (error) throw error;
+    await loadInventory(window.caseformActiveSettings);
+    dispatchShopUpdate();
+    return (data || rows).map(rowToInventory);
+  }
+
+  async function createNotificationEvent({ order, eventType, subject, body }) {
+    if (!client || !order) return null;
+
+    const payload = {
+      order_id: order.id,
+      user_id: order.user_id || order.userId || authUser?.id || null,
+      event_type: eventType,
+      recipient_email: order.email,
+      subject,
+      body,
+      status: "pending",
+    };
+
+    const { data, error } = await client
+      .from("notification_events")
+      .insert(payload)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.warn("VELTIER notification event could not be created.", error);
+      notificationRemoteReady = false;
+      return null;
+    }
+
+    notificationRemoteReady = true;
+    const event = rowToNotification(data);
+    notificationCache = [event, ...notificationCache];
+    return event;
+  }
+
+  async function updateOrder(orderId, fields = {}) {
+    if (!client) throw new Error("Supabase 연결 후 주문을 수정할 수 있습니다.");
+    if (!isAdmin()) throw new Error("주문 관리는 관리자 권한이 필요합니다.");
+
+    const previous = orderCache.find((order) => order.id === orderId) || null;
+    const nextStatus = fields.status || previous?.status;
+    const nextPaymentStatus = fields.paymentStatus || previous?.paymentStatus;
+    const patch = {
+      status: nextStatus,
+      payment_status: nextPaymentStatus,
+      tracking_number: String(fields.trackingNumber || "").trim(),
+      tracking_url: String(fields.trackingUrl || "").trim(),
+      admin_note: String(fields.adminNote || "").trim(),
+      payment_provider: String(fields.paymentProvider || previous?.paymentProvider || "").trim(),
+      provider_payment_id: String(fields.providerPaymentId || previous?.providerPaymentId || "").trim(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (nextPaymentStatus === "paid" && !previous?.paidAt) patch.paid_at = new Date().toISOString();
+    if (nextStatus === "shipped" && !previous?.shippedAt) patch.shipped_at = new Date().toISOString();
+
+    const { data, error } = await client
+      .from("orders")
+      .update(patch)
+      .eq("id", orderId)
+      .select("*, order_items(*)")
+      .single();
+
+    if (error) throw error;
+
+    const updated = rowToOrder(data);
+    orderCache = orderCache.map((order) => (order.id === orderId ? updated : order));
+
+    if (!previous || previous.status !== updated.status || previous.paymentStatus !== updated.paymentStatus) {
+      await createNotificationEvent({
+        order: data,
+        eventType: "order_status_changed",
+        subject: `[VELTIER] 주문 ${updated.orderNumber} 상태가 변경되었습니다`,
+        body: `현재 주문 상태: ${updated.status} / 결제 상태: ${updated.paymentStatus}`,
+      });
+    }
+
+    dispatchShopUpdate();
+    return updated;
+  }
+
+  async function createOrder({
+    recipientName,
+    phone,
+    email,
+    postalCode,
+    address1,
+    address2,
+    deliveryNote,
+    paymentProvider,
+  }) {
     const member = currentMember();
     const items = getCart();
 
     if (!member) throw new Error("주문하려면 로그인이 필요합니다.");
     if (!client || !authUser) throw new Error("Supabase 연결 후 주문을 만들 수 있습니다.");
     if (!items.length) throw new Error("장바구니에 담긴 상품이 없습니다.");
+    const unavailable = items.find((item) => !isVariantPurchasable(item.productIndex, item.device, item.quantity));
+    if (unavailable) throw new Error(`${unavailable.productName} / ${unavailable.device} 재고를 확인해주세요.`);
 
     const subtotal = cartTotal();
     const shippingFee = subtotal >= 30000 ? 0 : 3000;
@@ -752,6 +1045,7 @@
         subtotal,
         shipping_fee: shippingFee,
         total,
+        payment_provider: String(paymentProvider || "manual").trim(),
       })
       .select("*")
       .single();
@@ -772,7 +1066,15 @@
     const { error: itemError } = await client.from("order_items").insert(orderItems);
     if (itemError) throw itemError;
 
-    await loadOrders();
+    await createNotificationEvent({
+      order,
+      eventType: "order_created",
+      subject: `[VELTIER] 주문 ${order.order_number}이 접수되었습니다`,
+      body: `주문 금액 ${formatWon(total)}의 주문이 접수되었습니다. 결제 상태를 확인해주세요.`,
+    });
+
+    await client.from("cart_items").delete().eq("user_id", authUser.id);
+    await Promise.all([loadCart(), loadOrders()]);
     dispatchShopUpdate();
     return orderCache.find((item) => item.id === order.id) || rowToOrder({ ...order, order_items: orderItems });
   }
@@ -1009,6 +1311,7 @@
     keys,
     pageUrl,
     formatWon,
+    getDeviceOptions,
     isSupabaseEnabled,
     init,
     currentMember,
@@ -1024,6 +1327,10 @@
     removeCartItem,
     cartCount,
     cartTotal,
+    getInventory,
+    getProductInventory,
+    saveInventory,
+    isVariantPurchasable,
     getReviews,
     getMemberReviews,
     addReview,
@@ -1031,6 +1338,8 @@
     saveProducts,
     uploadProductMedia,
     getOrders,
+    getNotifications,
+    updateOrder,
     createOrder,
     setupHeaderActions,
     renderCartDrawer,

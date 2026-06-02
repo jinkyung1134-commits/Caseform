@@ -2,6 +2,7 @@
 
 1. Supabase에서 새 프로젝트를 만듭니다.
 2. `SQL Editor`에서 `supabase/schema.sql` 내용을 실행합니다.
+   - 이미 기존 스키마를 실행한 프로젝트라면 `supabase/commerce-ops.sql`만 추가로 실행해도 됩니다.
 3. `Project Settings > API`에서 `Project URL`과 `anon public` key를 복사합니다.
 4. 프로젝트의 `supabase-config.js`에 아래처럼 넣습니다.
 
@@ -31,6 +32,8 @@ window.CASEFORM_SUPABASE = {
 - `products`: 관리자 상품 관리용 테이블입니다. 공개 화면은 `is_active = true` 상품만 읽습니다.
 - `product-media`: 상품 이미지/영상 업로드용 공개 스토리지 버킷입니다. 업로드/수정/삭제는 `admin`만 가능합니다.
 - `orders`, `order_items`: 결제 연결 전 단계의 주문 생성용 테이블입니다. 고객은 본인 주문만 보고, 관리자는 전체 주문을 볼 수 있습니다.
+- `product_variants`: 상품별 기종 옵션, SKU, 재고, 품절 여부를 관리합니다.
+- `notification_events`: 주문 생성과 주문 상태 변경 시 이메일 발송용 대기열을 저장합니다.
 
 새 스키마를 실행한 뒤 관리자 페이지에서 상품을 저장하면 현재 상품 목록이 Supabase `products` 테이블로 동기화됩니다.
 

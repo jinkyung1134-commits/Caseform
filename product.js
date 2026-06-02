@@ -55,6 +55,10 @@ function productsUrl() {
   return window.CaseformConfig.urlFor("products.html", settings);
 }
 
+function policyUrl(hash = "") {
+  return `${window.CaseformConfig.urlFor("policies.html", settings)}${hash}`;
+}
+
 function renderProductMedia(target, options = {}) {
   target.classList.toggle("has-product-media", productHasMedia(product));
   target.innerHTML = productMediaMarkup(product, {
@@ -121,10 +125,38 @@ function renderDetail() {
     ? "대표 이미지는 상세 상단과 스크롤 쇼케이스에 같은 톤으로 이어져, 화면이 끊기지 않게 보입니다."
     : "상품 이미지를 등록하면 이 영역이 실제 사진 중심의 스크롤 쇼케이스로 바뀝니다.";
   document.querySelector("#collection-link").href = productsUrl();
-  document.querySelector("#support-link").href = indexUrl("#support");
+  document.querySelector("#support-link").href = policyUrl("#shipping");
   document.querySelector("[data-home-link]").href = indexUrl("");
   if (shop) {
     shop.setupHeaderActions(settings);
+  }
+}
+
+function renderDeviceOptions() {
+  if (!deviceSelect || !shop?.getDeviceOptions) return;
+
+  const inventory = shop.getProductInventory ? shop.getProductInventory(selectedIndex) : [];
+  const inventoryByDevice = new Map(inventory.map((item) => [item.device, item]));
+
+  deviceSelect.innerHTML = shop
+    .getDeviceOptions()
+    .map((device) => {
+      const variant = inventoryByDevice.get(device);
+      const stock = Number(variant?.stockQuantity ?? 12);
+      const isAvailable = variant ? variant.isAvailable && stock > 0 : true;
+      const lowStock = isAvailable && stock <= Number(variant?.lowStockThreshold ?? 3);
+      const label = !isAvailable
+        ? `${device} - 품절`
+        : lowStock
+          ? `${device} - ${stock}개 남음`
+          : device;
+      return `<option value="${escapeHtml(device)}"${isAvailable ? "" : " disabled"}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+
+  const firstEnabled = [...deviceSelect.options].find((option) => !option.disabled);
+  if (firstEnabled) {
+    deviceSelect.value = firstEnabled.value;
   }
 }
 
@@ -381,6 +413,7 @@ async function boot() {
   await hydrateProductSettings();
   applyTheme();
   renderDetail();
+  renderDeviceOptions();
   renderRelated();
   setupHeaderMenu();
   setupScrollStory();

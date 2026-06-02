@@ -14,6 +14,17 @@ const adminProductCount = document.querySelector("#admin-product-count");
 const adminHeroCount = document.querySelector("#admin-hero-count");
 const adminReviewMode = document.querySelector("#admin-review-mode");
 const adminRoleName = document.querySelector("#admin-role-name");
+const adminOrderCount = document.querySelector("#admin-order-count");
+const adminLowStockCount = document.querySelector("#admin-low-stock-count");
+const adminOrderFilter = document.querySelector("#admin-order-filter");
+const adminRefreshOrders = document.querySelector("#admin-refresh-orders");
+const adminOrders = document.querySelector("#admin-orders");
+const inventoryProductSelect = document.querySelector("#inventory-product-select");
+const inventorySeedButton = document.querySelector("#inventory-seed-button");
+const inventorySaveButton = document.querySelector("#inventory-save-button");
+const inventoryGrid = document.querySelector("#inventory-grid");
+const inventoryStatus = document.querySelector("#inventory-status");
+const notificationList = document.querySelector("#notification-list");
 const imagePreset = form.elements.heroImagePreset || null;
 const homeLinks = [...document.querySelectorAll('a[href="index.html"]')];
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
@@ -24,6 +35,30 @@ const IMAGE_QUALITY = 0.82;
 let settings = window.CaseformConfig.load();
 let adminReady = false;
 let adminBootPromise = null;
+
+const orderStatuses = {
+  pending_payment: "결제 대기",
+  paid: "결제 완료",
+  preparing: "상품 준비",
+  shipped: "배송 중",
+  delivered: "배송 완료",
+  cancelled: "취소",
+};
+
+const paymentStatuses = {
+  not_started: "결제 전",
+  ready: "결제 준비",
+  paid: "결제 완료",
+  failed: "결제 실패",
+  cancelled: "결제 취소",
+  refunded: "환불 완료",
+};
+
+const paymentProviders = {
+  manual: "관리자 확인",
+  toss: "Toss Payments",
+  stripe: "Stripe",
+};
 
 function roleLabel(role) {
   const labels = {
@@ -43,10 +78,224 @@ function setAdminAuthStatus(message, tone = "neutral") {
 
 function updateAdminDashboard() {
   const heroProducts = settings.products.filter((product) => product.showInHero);
+  const inventory = shop?.getInventory?.() || [];
+  const lowStockItems = inventory.filter(
+    (item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0),
+  );
   if (adminProductCount) adminProductCount.textContent = String(settings.products.length);
   if (adminHeroCount) adminHeroCount.textContent = String(heroProducts.length);
   if (adminReviewMode) adminReviewMode.textContent = shop?.isSupabaseEnabled() ? "Supabase" : "Local";
   if (adminRoleName) adminRoleName.textContent = roleLabel(shop?.currentRole?.() || "admin");
+  if (adminOrderCount) adminOrderCount.textContent = String(shop?.getOrders?.().length || 0);
+  if (adminLowStockCount) adminLowStockCount.textContent = String(lowStockItems.length);
+}
+
+function statusOptions(source, selected) {
+  return Object.entries(source)
+    .map(([value, label]) => `<option value="${value}"${value === selected ? " selected" : ""}>${label}</option>`)
+    .join("");
+}
+
+function orderStatusLabel(status) {
+  return orderStatuses[status] || status || "확인 중";
+}
+
+function paymentStatusLabel(status) {
+  return paymentStatuses[status] || status || "확인 중";
+}
+
+function paymentProviderLabel(provider) {
+  return paymentProviders[provider] || provider || "관리자 확인";
+}
+
+function renderAdminOrders() {
+  if (!adminOrders || !shop?.getOrders) return;
+
+  const filter = adminOrderFilter?.value || "all";
+  const orders = shop
+    .getOrders()
+    .filter((order) => filter === "all" || order.status === filter)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (!orders.length) {
+    adminOrders.innerHTML = `<div class="admin-empty">표시할 주문이 없습니다.</div>`;
+    return;
+  }
+
+  adminOrders.innerHTML = orders
+    .map(
+      (order) => `
+        <article class="admin-order-card" data-order-id="${escapeHtml(order.id)}">
+          <div class="admin-order-head">
+            <div>
+              <strong>${escapeHtml(order.orderNumber)}</strong>
+              <span>${new Date(order.createdAt).toLocaleString("ko-KR")} · ${escapeHtml(order.recipientName)} · ${shop.formatWon(order.total)}</span>
+            </div>
+            <span class="status-pill">${orderStatusLabel(order.status)} · ${paymentStatusLabel(order.paymentStatus)}</span>
+          </div>
+          <div class="admin-order-items">
+            ${(order.items || [])
+              .map(
+                (item) => `
+                  <span>${escapeHtml(item.productName)} / ${escapeHtml(item.device)} · ${Number(item.quantity || 1)}개</span>
+                `,
+              )
+              .join("")}
+          </div>
+          <div class="admin-order-meta">
+            <span>${escapeHtml(order.phone)}</span>
+            <span>${escapeHtml(order.email)}</span>
+            <span>${escapeHtml([order.postalCode, order.address1, order.address2].filter(Boolean).join(" "))}</span>
+          </div>
+          <div class="admin-order-controls">
+            <label>
+              <span>주문 상태</span>
+              <select data-order-field="status">${statusOptions(orderStatuses, order.status)}</select>
+            </label>
+            <label>
+              <span>결제 상태</span>
+              <select data-order-field="paymentStatus">${statusOptions(paymentStatuses, order.paymentStatus)}</select>
+            </label>
+            <label>
+              <span>결제 방식</span>
+              <select data-order-field="paymentProvider">
+                ${statusOptions(paymentProviders, order.paymentProvider || "manual")}
+              </select>
+            </label>
+            <label>
+              <span>결제 ID</span>
+              <input data-order-field="providerPaymentId" type="text" value="${escapeHtml(order.providerPaymentId)}" placeholder="payment id" />
+            </label>
+            <label>
+              <span>송장번호</span>
+              <input data-order-field="trackingNumber" type="text" value="${escapeHtml(order.trackingNumber)}" placeholder="송장번호" />
+            </label>
+            <label>
+              <span>배송조회 URL</span>
+              <input data-order-field="trackingUrl" type="url" value="${escapeHtml(order.trackingUrl)}" placeholder="https://..." />
+            </label>
+            <label class="wide-field">
+              <span>관리 메모</span>
+              <textarea data-order-field="adminNote" rows="2">${escapeHtml(order.adminNote)}</textarea>
+            </label>
+            <button class="button primary" type="button" data-order-save>주문 저장</button>
+          </div>
+          <p class="admin-helper">
+            ${escapeHtml(paymentProviderLabel(order.paymentProvider))} · ${order.deliveryNote ? `배송 메모: ${escapeHtml(order.deliveryNote)}` : "배송 메모 없음"}
+          </p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function selectedInventoryIndex() {
+  return Number(inventoryProductSelect?.value || 0);
+}
+
+function renderInventorySelector() {
+  if (!inventoryProductSelect) return;
+  const current = inventoryProductSelect.value;
+  inventoryProductSelect.innerHTML = settings.products
+    .map((product, index) => `<option value="${index}">${index + 1}. ${escapeHtml(product.name)}</option>`)
+    .join("");
+  if (current && Number(current) < settings.products.length) inventoryProductSelect.value = current;
+}
+
+function renderInventoryGrid() {
+  if (!inventoryGrid || !shop?.getDeviceOptions) return;
+
+  const productIndex = selectedInventoryIndex();
+  const inventory = shop.getProductInventory(productIndex);
+  const byDevice = new Map(inventory.map((item) => [item.device, item]));
+
+  inventoryGrid.innerHTML = shop
+    .getDeviceOptions()
+    .map((device) => {
+      const item = byDevice.get(device) || {
+        productIndex,
+        device,
+        sku: `VT-${String(productIndex + 1).padStart(3, "0")}-${device.replace(/[^A-Z0-9]/gi, "").toUpperCase()}`,
+        stockQuantity: 12,
+        lowStockThreshold: 3,
+        isAvailable: true,
+      };
+      return `
+        <div class="inventory-row" data-device="${escapeHtml(device)}">
+          <strong>${escapeHtml(device)}</strong>
+          <label>
+            <span>SKU</span>
+            <input data-inventory-field="sku" type="text" value="${escapeHtml(item.sku)}" />
+          </label>
+          <label>
+            <span>재고</span>
+            <input data-inventory-field="stockQuantity" type="number" min="0" step="1" value="${Number(item.stockQuantity || 0)}" />
+          </label>
+          <label>
+            <span>주의 기준</span>
+            <input data-inventory-field="lowStockThreshold" type="number" min="0" step="1" value="${Number(item.lowStockThreshold || 0)}" />
+          </label>
+          <label class="admin-toggle">
+            <input data-inventory-field="isAvailable" type="checkbox"${item.isAvailable ? " checked" : ""} />
+            <span>판매</span>
+          </label>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function collectInventoryRows() {
+  const productIndex = selectedInventoryIndex();
+  return [...inventoryGrid.querySelectorAll(".inventory-row")].map((row) => ({
+    productIndex,
+    device: row.dataset.device,
+    sku: row.querySelector('[data-inventory-field="sku"]').value.trim(),
+    stockQuantity: Number(row.querySelector('[data-inventory-field="stockQuantity"]').value) || 0,
+    lowStockThreshold: Number(row.querySelector('[data-inventory-field="lowStockThreshold"]').value) || 0,
+    isAvailable: row.querySelector('[data-inventory-field="isAvailable"]').checked,
+  }));
+}
+
+function seedInventoryRows() {
+  if (!inventoryGrid) return;
+  inventoryGrid.querySelectorAll(".inventory-row").forEach((row) => {
+    row.querySelector('[data-inventory-field="stockQuantity"]').value = "12";
+    row.querySelector('[data-inventory-field="lowStockThreshold"]').value = "3";
+    row.querySelector('[data-inventory-field="isAvailable"]').checked = true;
+  });
+  inventoryStatus.textContent = "기본 재고가 입력되었습니다. 저장을 눌러 반영하세요.";
+}
+
+function renderNotifications() {
+  if (!notificationList || !shop?.getNotifications) return;
+
+  const notifications = shop.getNotifications();
+  if (!notifications.length) {
+    notificationList.innerHTML = `<div class="admin-empty">아직 알림 대기열이 없습니다.</div>`;
+    return;
+  }
+
+  notificationList.innerHTML = notifications
+    .slice(0, 8)
+    .map(
+      (event) => `
+        <article class="notification-item">
+          <strong>${escapeHtml(event.subject)}</strong>
+          <span>${escapeHtml(event.recipientEmail)} · ${escapeHtml(event.status)} · ${new Date(event.createdAt).toLocaleString("ko-KR")}</span>
+          <p>${escapeHtml(event.body)}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderOperationPanels() {
+  renderAdminOrders();
+  renderInventorySelector();
+  renderInventoryGrid();
+  renderNotifications();
+  updateAdminDashboard();
 }
 
 function renderAdminAccess(access) {
@@ -114,6 +363,8 @@ async function bootAdmin() {
         } else {
           updateAdminDashboard();
         }
+
+        renderOperationPanels();
       }
     } catch (error) {
       adminApp.classList.add("is-hidden");
@@ -604,6 +855,70 @@ productHost.addEventListener("change", (event) => {
   updatePreview();
   updateHomeLinks();
 });
+
+if (adminOrderFilter) {
+  adminOrderFilter.addEventListener("change", renderAdminOrders);
+}
+
+if (adminRefreshOrders) {
+  adminRefreshOrders.addEventListener("click", async () => {
+    setAdminAuthStatus("주문을 다시 불러오는 중입니다.", "neutral");
+    await bootAdmin();
+  });
+}
+
+if (adminOrders) {
+  adminOrders.addEventListener("click", async (event) => {
+    const saveButton = event.target.closest("[data-order-save]");
+    if (!saveButton || !shop) return;
+
+    const card = saveButton.closest("[data-order-id]");
+    const orderId = card.dataset.orderId;
+    const fields = {};
+    card.querySelectorAll("[data-order-field]").forEach((field) => {
+      fields[field.dataset.orderField] = field.value;
+    });
+
+    saveButton.disabled = true;
+    saveButton.textContent = "저장 중";
+    try {
+      await shop.updateOrder(orderId, fields);
+      setAdminAuthStatus("주문 상태가 저장되었습니다.", "success");
+      renderOperationPanels();
+    } catch (error) {
+      setAdminAuthStatus(error.message || "주문 저장에 실패했습니다.", "warning");
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = "주문 저장";
+    }
+  });
+}
+
+if (inventoryProductSelect) {
+  inventoryProductSelect.addEventListener("change", renderInventoryGrid);
+}
+
+if (inventorySeedButton) {
+  inventorySeedButton.addEventListener("click", seedInventoryRows);
+}
+
+if (inventorySaveButton) {
+  inventorySaveButton.addEventListener("click", async () => {
+    if (!shop) return;
+    inventorySaveButton.disabled = true;
+    inventoryStatus.textContent = "재고를 저장하는 중입니다.";
+    try {
+      await shop.saveInventory(selectedInventoryIndex(), collectInventoryRows());
+      inventoryStatus.textContent = "재고가 저장되었습니다.";
+      renderOperationPanels();
+    } catch (error) {
+      inventoryStatus.textContent =
+        error.message || "재고 저장에 실패했습니다. Supabase 확장 SQL을 먼저 실행했는지 확인해주세요.";
+    } finally {
+      inventorySaveButton.disabled = false;
+    }
+  });
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

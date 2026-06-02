@@ -27,6 +27,10 @@ function productsUrl() {
   return window.CaseformConfig.urlFor("products.html", settings);
 }
 
+function policyUrl(hash = "") {
+  return `${window.CaseformConfig.urlFor("policies.html", settings)}${hash}`;
+}
+
 function escapeHtml(value) {
   return window.CaseformConfig.escapeHtml(String(value || ""));
 }
@@ -59,7 +63,7 @@ async function applySettings() {
     link.href = productsUrl();
   });
   document.querySelectorAll("[data-support-link]").forEach((link) => {
-    link.href = indexUrl("#support");
+    link.href = policyUrl("#shipping");
   });
   shop.setupHeaderActions(settings);
   await shop.init(settings);
@@ -123,6 +127,18 @@ function orderStatusLabel(status) {
   return labels[status] || status || "확인 중";
 }
 
+function paymentStatusLabel(status) {
+  const labels = {
+    not_started: "결제 전",
+    ready: "결제 준비",
+    paid: "결제 완료",
+    failed: "결제 실패",
+    cancelled: "결제 취소",
+    refunded: "환불 완료",
+  };
+  return labels[status] || status || "확인 중";
+}
+
 function renderOrderSummary() {
   const member = shop.currentMember();
   if (!member) {
@@ -139,9 +155,17 @@ function renderOrderSummary() {
   accountOrderList.innerHTML = orders
     .map(
       (order) => `
-        <div class="account-list-item">
+        <div class="account-list-item account-order-item">
           <strong>${escapeHtml(order.orderNumber)} · ${orderStatusLabel(order.status)}</strong>
-          <span>${new Date(order.createdAt).toLocaleDateString("ko-KR")} · ${shop.formatWon(order.total)}</span>
+          <span>${new Date(order.createdAt).toLocaleDateString("ko-KR")} · ${shop.formatWon(order.total)} · ${paymentStatusLabel(order.paymentStatus)}</span>
+          <small>${(order.items || [])
+            .map((item) => `${escapeHtml(item.productName)} / ${escapeHtml(item.device)} ${Number(item.quantity || 1)}개`)
+            .join(" · ")}</small>
+          ${
+            order.trackingNumber
+              ? `<small>송장번호 ${escapeHtml(order.trackingNumber)}${order.trackingUrl ? ` · <a href="${escapeHtml(order.trackingUrl)}" target="_blank" rel="noopener">배송조회</a>` : ""}</small>`
+              : `<small>배송 준비 전입니다.</small>`
+          }
         </div>
       `,
     )

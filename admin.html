@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260602-google-auth" />
-    <link rel="stylesheet" href="admin.css?v=20260602-google-auth" />
+    <link rel="stylesheet" href="styles.css?v=20260602-ops-core" />
+    <link rel="stylesheet" href="admin.css?v=20260602-ops-core" />
   </head>
   <body class="admin-body">
     <header class="admin-header">
@@ -74,6 +74,63 @@
             <span>현재 권한</span>
             <strong id="admin-role-name">-</strong>
           </article>
+          <article>
+            <span>주문</span>
+            <strong id="admin-order-count">0</strong>
+          </article>
+          <article>
+            <span>재고 주의</span>
+            <strong id="admin-low-stock-count">0</strong>
+          </article>
+        </section>
+
+        <section class="admin-panel orders-panel" aria-labelledby="orders-panel">
+          <div class="panel-heading">
+            <h2 id="orders-panel">주문 관리</h2>
+            <span>상태와 결제</span>
+          </div>
+          <div class="admin-toolbar">
+            <label>
+              <span>주문 상태</span>
+              <select id="admin-order-filter">
+                <option value="all">전체 주문</option>
+                <option value="pending_payment">결제 대기</option>
+                <option value="paid">결제 완료</option>
+                <option value="preparing">상품 준비</option>
+                <option value="shipped">배송 중</option>
+                <option value="delivered">배송 완료</option>
+                <option value="cancelled">취소</option>
+              </select>
+            </label>
+            <button class="button secondary" id="admin-refresh-orders" type="button">새로고침</button>
+          </div>
+          <div class="admin-orders" id="admin-orders"></div>
+        </section>
+
+        <section class="admin-panel inventory-panel" aria-labelledby="inventory-panel">
+          <div class="panel-heading">
+            <h2 id="inventory-panel">기종별 재고</h2>
+            <span>상품 옵션</span>
+          </div>
+          <div class="admin-toolbar">
+            <label>
+              <span>상품 선택</span>
+              <select id="inventory-product-select"></select>
+            </label>
+            <button class="button secondary" id="inventory-seed-button" type="button">기본 재고 채우기</button>
+            <button class="button primary" id="inventory-save-button" type="button">재고 저장</button>
+          </div>
+          <div class="inventory-grid" id="inventory-grid"></div>
+          <p class="admin-helper" id="inventory-status" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-panel notification-panel" aria-labelledby="notification-panel">
+          <div class="panel-heading">
+            <h2 id="notification-panel">이메일 알림 대기열</h2>
+            <span>발송 준비</span>
+          </div>
+          <div class="notification-list" id="notification-list"></div>
+          <p class="admin-helper">실제 발송은 다음 단계에서 Supabase Edge Function 또는 이메일 서비스 키를 연결하면 자동화할 수 있습니다.</p>
         </section>
 
         <form class="admin-layout" id="settings-form">
@@ -204,7 +261,7 @@
     <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-google-auth"></script>
-    <script src="admin.js?v=20260602-google-auth"></script>
+    <script src="shop.js?v=20260602-ops-core"></script>
+    <script src="admin.js?v=20260602-ops-core"></script>
   </body>
 </html>

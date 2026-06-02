@@ -24,6 +24,11 @@ function indexUrl(hash = "") {
   return `${url}${hash}`;
 }
 
+function policyUrl(hash = "") {
+  const url = window.CaseformConfig.urlFor("policies.html", settings);
+  return `${url}${hash}`;
+}
+
 function applySettings() {
   const root = document.documentElement;
   root.style.setProperty("--accent", settings.colors.accent);
@@ -44,7 +49,7 @@ function applySettings() {
     link.href = productsUrl();
   });
   document.querySelectorAll("[data-support-link]").forEach((link) => {
-    link.href = indexUrl("#support");
+    link.href = policyUrl("#shipping");
   });
   if (window.CaseformShop) {
     window.CaseformShop.setupHeaderActions(settings);
