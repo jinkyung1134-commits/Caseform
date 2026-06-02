@@ -2347,7 +2347,7 @@ legend,
 }
 
 .auth-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .social-auth-grid,
@@ -2473,6 +2473,43 @@ legend,
   content: "";
   height: 1px;
   background: rgba(184, 137, 47, 0.2);
+}
+
+.auth-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  margin-top: 2px;
+  color: #8d8578;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.auth-secondary-actions button,
+.auth-text-button {
+  border: 0;
+  background: transparent;
+  color: #7b5a1b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.auth-secondary-actions button {
+  padding: 0;
+}
+
+.auth-text-button {
+  width: fit-content;
+  margin: -2px auto 0;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.auth-secondary-actions button:hover,
+.auth-text-button:hover {
+  color: #171411;
 }
 
 .account-form,

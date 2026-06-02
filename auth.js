@@ -9,8 +9,34 @@ const resetForm = document.querySelector("#reset-form");
 const updatePasswordForm = document.querySelector("#update-password-form");
 const signupForm = document.querySelector("#signup-form");
 const authStatus = document.querySelector("#auth-status");
+const authTitle = document.querySelector("#auth-title");
+const authLead = document.querySelector(".auth-panel-head p");
 const providerButtons = [...document.querySelectorAll("[data-oauth-provider]")];
+const assistButtons = [...document.querySelectorAll("[data-auth-assist]")];
+const authSecondaryActions = document.querySelector(".auth-secondary-actions");
 const guestCheckoutButton = document.querySelector("[data-guest-checkout]");
+const authCopy = {
+  login: {
+    title: "로그인",
+    lead: "주문 내역과 배송지를 확인하려면 로그인하세요.",
+  },
+  signup: {
+    title: "회원가입",
+    lead: "이메일과 비밀번호로 VELTIER 계정을 만드세요.",
+  },
+  reset: {
+    title: "비밀번호 찾기",
+    lead: "가입한 이메일로 재설정 링크를 받아보세요.",
+  },
+  otp: {
+    title: "이메일 링크 로그인",
+    lead: "비밀번호 없이 이메일 인증 링크로 로그인할 수 있어요.",
+  },
+  update: {
+    title: "새 비밀번호 설정",
+    lead: "메일 링크로 인증한 뒤 새 비밀번호를 저장하세요.",
+  },
+};
 const pendingProviderMessages = {
   apple: "Apple 로그인은 Apple Developer 유료 계정 준비 후 연결할 예정입니다.",
   kakao: "Kakao 로그인은 카카오 심사 승인 후 연결할 예정입니다.",
@@ -106,14 +132,19 @@ function setupHeaderMenu() {
 }
 
 function setAuthTab(tabName) {
+  const activeTab = tabName === "signup" ? "signup" : "login";
+  const copy = authCopy[tabName] || authCopy.login;
   document.querySelectorAll("[data-auth-tab]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.authTab === tabName);
+    button.classList.toggle("is-active", button.dataset.authTab === activeTab);
   });
   otpForm.classList.toggle("is-hidden", tabName !== "otp");
-  loginForm.classList.toggle("is-hidden", tabName !== "password");
+  loginForm.classList.toggle("is-hidden", tabName !== "login");
   resetForm.classList.toggle("is-hidden", tabName !== "reset");
   updatePasswordForm.classList.toggle("is-hidden", tabName !== "update");
   signupForm.classList.toggle("is-hidden", tabName !== "signup");
+  authSecondaryActions?.classList.toggle("is-hidden", tabName !== "login");
+  if (authTitle) authTitle.textContent = copy.title;
+  if (authLead) authLead.textContent = copy.lead;
   authStatus.textContent = "";
 }
 
@@ -126,6 +157,10 @@ function redirectIfSignedIn() {
 
 document.querySelectorAll("[data-auth-tab]").forEach((button) => {
   button.addEventListener("click", () => setAuthTab(button.dataset.authTab));
+});
+
+assistButtons.forEach((button) => {
+  button.addEventListener("click", () => setAuthTab(button.dataset.authAssist));
 });
 
 providerButtons.forEach((button) => {
@@ -228,7 +263,7 @@ signupForm.addEventListener("submit", async (event) => {
     });
     signupForm.reset();
     if (result.needsEmailConfirmation) {
-      setAuthTab("password");
+      setAuthTab("login");
       authStatus.textContent = "가입 확인 메일을 보냈습니다. 메일함에서 인증 후 로그인해주세요.";
       return;
     }

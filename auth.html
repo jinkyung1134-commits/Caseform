@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/auth.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-auth-simple" />
+    <link rel="stylesheet" href="styles.css?v=20260602-auth-login-tabs" />
   </head>
   <body class="auth-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -56,22 +56,12 @@
 
           <div class="auth-divider" aria-hidden="true"><span>또는 이메일로</span></div>
 
-          <div class="account-tabs auth-tabs" role="tablist" aria-label="로그인 방식">
-            <button class="is-active" type="button" data-auth-tab="otp">이메일 인증</button>
-            <button type="button" data-auth-tab="password">비밀번호</button>
-            <button type="button" data-auth-tab="reset">비밀번호 찾기</button>
+          <div class="account-tabs auth-tabs" role="tablist" aria-label="계정 메뉴">
+            <button class="is-active" type="button" data-auth-tab="login">로그인</button>
             <button type="button" data-auth-tab="signup">회원가입</button>
           </div>
 
-          <form class="account-form" id="otp-form">
-            <label>
-              <span>이메일</span>
-              <input type="email" name="email" autocomplete="email" required />
-            </label>
-            <button class="button primary" type="submit">인증 링크 받기</button>
-          </form>
-
-          <form class="account-form is-hidden" id="login-form">
+          <form class="account-form" id="login-form">
             <label>
               <span>이메일</span>
               <input type="email" name="email" autocomplete="email" required />
@@ -83,6 +73,21 @@
             <button class="button primary" type="submit">로그인</button>
           </form>
 
+          <div class="auth-secondary-actions">
+            <button type="button" data-auth-assist="reset">비밀번호 찾기</button>
+            <button type="button" data-auth-assist="otp">이메일 링크로 로그인</button>
+          </div>
+
+          <form class="account-form is-hidden" id="otp-form">
+            <p class="auth-note">비밀번호 없이 이메일로 받은 인증 링크를 눌러 로그인합니다.</p>
+            <label>
+              <span>이메일</span>
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <button class="button primary" type="submit">인증 링크 받기</button>
+            <button class="auth-text-button" type="button" data-auth-assist="login">로그인으로 돌아가기</button>
+          </form>
+
           <form class="account-form is-hidden" id="reset-form">
             <p class="auth-note">가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.</p>
             <label>
@@ -90,6 +95,7 @@
               <input type="email" name="email" autocomplete="email" required />
             </label>
             <button class="button primary" type="submit">재설정 메일 받기</button>
+            <button class="auth-text-button" type="button" data-auth-assist="login">로그인으로 돌아가기</button>
           </form>
 
           <form class="account-form is-hidden" id="update-password-form">
@@ -146,7 +152,7 @@
     <script src="site-config.js?v=20260602-responsive-ui"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-auth-simple"></script>
-    <script src="auth.js?v=20260602-auth-simple"></script>
+    <script src="shop.js?v=20260602-auth-login-tabs"></script>
+    <script src="auth.js?v=20260602-auth-login-tabs"></script>
   </body>
 </html>
