@@ -353,21 +353,27 @@
       return null;
     }
 
-    const { data, error } = await client
-      .from("profiles")
-      .select("*")
-      .eq("id", authUser.id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    profileCache = data || {
+    const fallbackProfile = {
       id: authUser.id,
       email: authUser.email,
       name: authUser.user_metadata?.name || authUser.email,
       phone: authUser.user_metadata?.phone || "",
       role: "customer",
     };
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("*")
+      .eq("id", authUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("VELTIER profile could not be loaded.", error);
+      profileCache = fallbackProfile;
+      return profileCache;
+    }
+
+    profileCache = data || fallbackProfile;
     profileCache.role = profileCache.role || "customer";
     return profileCache;
   }
@@ -383,7 +389,11 @@
       .select("id, product_index, product_name, product_image, price, device, quantity, created_at")
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.warn("VELTIER cart could not be loaded.", error);
+      cartCache = [];
+      return cartCache;
+    }
     cartCache = (data || []).map(rowToCartItem);
     return cartCache;
   }
@@ -438,7 +448,11 @@
       .select("id, product_index, user_id, author, rating, title, body, created_at")
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.warn("VELTIER reviews could not be loaded.", error);
+      reviewCache = seededReviews;
+      return reviewCache;
+    }
     reviewCache = (data || []).map(rowToReview);
     return reviewCache;
   }
@@ -645,7 +659,7 @@
       profileCache = null;
     }
 
-    await Promise.all([
+    const results = await Promise.allSettled([
       authUser ? loadCart() : Promise.resolve([]),
       authUser ? loadOrders() : Promise.resolve([]),
       authUser ? loadAddresses() : Promise.resolve([]),
@@ -653,6 +667,9 @@
       loadInventory(settings || window.caseformActiveSettings),
       loadReviews(),
     ]);
+    results
+      .filter((result) => result.status === "rejected")
+      .forEach((result) => console.warn("VELTIER remote data could not be refreshed.", result.reason));
     renderCartDrawer(settings || window.caseformActiveSettings);
     dispatchShopUpdate();
   }
@@ -735,8 +752,10 @@
     authUser = data.session?.user || null;
     if (authUser) {
       await loadProfile();
-      await syncLocalCartToRemote();
-      await Promise.all([loadCart(), loadAddresses()]);
+      await syncLocalCartToRemote().catch((cartError) => {
+        console.warn("VELTIER local cart could not be synced.", cartError);
+      });
+      await Promise.allSettled([loadCart(), loadAddresses()]);
     }
 
     dispatchShopUpdate();
@@ -771,8 +790,10 @@
 
     authUser = data.user;
     await loadProfile();
-    await syncLocalCartToRemote();
-    await Promise.all([loadCart(), loadOrders(), loadAddresses()]);
+    await syncLocalCartToRemote().catch((cartError) => {
+      console.warn("VELTIER local cart could not be synced.", cartError);
+    });
+    await Promise.allSettled([loadCart(), loadOrders(), loadAddresses()]);
     dispatchShopUpdate();
     return profileCache;
   }
@@ -1567,7 +1588,7 @@
       if (!button.dataset.accountBound) {
         button.dataset.accountBound = "true";
         button.addEventListener("click", () => {
-          window.location.href = pageUrl("account.html", settings);
+          window.location.href = pageUrl("account.html", window.caseformActiveSettings || settings);
         });
       }
       const member = currentMember();
