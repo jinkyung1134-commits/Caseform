@@ -117,6 +117,10 @@ textarea {
   display: none;
 }
 
+.hero.is-empty-hero .hero-mobile-actions {
+  display: none !important;
+}
+
 .mobile-menu-button {
   position: absolute;
   left: 0;

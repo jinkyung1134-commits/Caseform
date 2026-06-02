@@ -189,6 +189,12 @@ function renderStoryMedia(target) {
 }
 
 function renderDetail() {
+  document.body.classList.remove("product-unavailable");
+  ["#scroll-story", "#purchase-section", "#reviews", ".related-slider-section"].forEach((selector) => {
+    const section = document.querySelector(selector);
+    if (section) section.hidden = false;
+  });
+  jumpPurchaseButton.textContent = "구매하기";
   document.title = `${product.name} - ${settings.brandName}`;
   const description = `${product.name} ${product.material} 케이스. 기종 선택과 구매자 리뷰를 확인하세요.`;
   document.querySelector('meta[name="description"]')?.setAttribute("content", description);

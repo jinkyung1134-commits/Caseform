@@ -13,9 +13,9 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/caseform-ivory-grid-concept.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/product.html?id=0" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260603-upload-media-products" />
+    <link rel="stylesheet" href="styles.css?v=20260603-refresh-empty-state" />
   </head>
-  <body class="product-page gold-finish">
+  <body class="product-page gold-finish product-unavailable">
     <header class="site-header" aria-label="상단 메뉴">
       <nav class="nav">
         <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="메뉴 열기" aria-expanded="false">
@@ -40,15 +40,18 @@
     <main>
       <section class="product-detail-hero">
         <div class="product-detail-visual" id="detail-media" aria-label="상품 대표 미디어">
-          <div class="case-mini product-case"></div>
+          <div class="product-media-empty product-detail-empty">
+            <strong>등록된 상품이 없습니다.</strong>
+            <span>관리자 상품 관리에서 실제 상품과 미디어 파일을 업로드하세요.</span>
+          </div>
         </div>
         <div class="product-detail-copy">
-          <h1 id="detail-name">상품명</h1>
-          <button class="button primary product-jump-button" id="jump-purchase" type="button">구매하기</button>
+          <h1 id="detail-name">상품 준비 중</h1>
+          <button class="button primary product-jump-button" id="jump-purchase" type="button">컬렉션 보기</button>
         </div>
       </section>
 
-      <section class="product-scroll-story" id="scroll-story" aria-labelledby="story-title">
+      <section class="product-scroll-story" id="scroll-story" aria-labelledby="story-title" hidden>
         <div class="story-shell">
           <div class="story-visual">
             <div class="story-stage" id="story-stage" data-scene="0">
@@ -76,7 +79,7 @@
         </div>
       </section>
 
-      <section class="section product-buy-section" id="purchase-section" aria-labelledby="purchase-title">
+      <section class="section product-buy-section" id="purchase-section" aria-labelledby="purchase-title" hidden>
         <div class="purchase-showcase">
           <div class="purchase-media" id="purchase-media" aria-label="구매 상품 이미지"></div>
           <div class="purchase-panel">
@@ -109,7 +112,7 @@
         </div>
       </section>
 
-      <section class="section reviews-section" id="reviews" aria-labelledby="reviews-title">
+      <section class="section reviews-section" id="reviews" aria-labelledby="reviews-title" hidden>
         <div class="section-heading reviews-heading">
           <p class="eyebrow">Reviews</p>
           <h2 id="reviews-title">실제 사용감</h2>
@@ -146,7 +149,7 @@
         </div>
       </section>
 
-      <section class="section detail-section related-slider-section" aria-labelledby="related-title">
+      <section class="section detail-section related-slider-section" aria-labelledby="related-title" hidden>
         <div class="section-heading">
           <p class="eyebrow">More from the drop</p>
           <h2 id="related-title">다른 케이스도 살펴보세요.</h2>
@@ -159,10 +162,10 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260603-upload-media-products"></script>
+    <script src="site-config.js?v=20260603-refresh-empty-state"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260603-upload-media-products"></script>
-    <script src="product.js?v=20260603-upload-media-products"></script>
+    <script src="shop.js?v=20260603-refresh-empty-state"></script>
+    <script src="product.js?v=20260603-refresh-empty-state"></script>
   </body>
 </html>
