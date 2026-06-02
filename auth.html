@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/auth.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-auth-polish" />
+    <link rel="stylesheet" href="styles.css?v=20260602-auth-simple" />
   </head>
   <body class="auth-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -37,37 +37,12 @@
       </nav>
     </header>
 
-    <main class="auth-page-main">
-      <section class="auth-commerce-shell" aria-labelledby="auth-title">
-        <aside class="auth-brand-panel">
-          <div class="auth-brand-copy">
-            <h1 id="auth-title">VELTIER 계정으로 주문을 이어가세요.</h1>
-            <p>주문 내역, 배송지, 리뷰를 한 곳에서 확인하고 다음 구매를 더 빠르게 진행하세요.</p>
-          </div>
-          <div class="auth-product-stage" aria-hidden="true">
-            <img src="assets/caseform-ivory-grid-concept.png" alt="" />
-          </div>
-          <div class="auth-account-points" aria-label="계정에서 확인할 수 있는 내용">
-            <article>
-              <span>Order</span>
-              <strong>주문·배송 조회</strong>
-            </article>
-            <article>
-              <span>Address</span>
-              <strong>기본 배송지 저장</strong>
-            </article>
-            <article>
-              <span>Review</span>
-              <strong>구매 리뷰 관리</strong>
-            </article>
-          </div>
-        </aside>
-
+    <main class="auth-page-main auth-simple-main">
+      <section class="auth-simple-shell" aria-labelledby="auth-title">
         <div class="account-panel auth-panel">
           <div class="auth-panel-head">
-            <span>VELTIER Account</span>
-            <h2>로그인 또는 회원가입</h2>
-            <p>Google 또는 이메일로 시작하세요. 완료 후 원래 보던 화면으로 돌아갑니다.</p>
+            <h1 id="auth-title">로그인</h1>
+            <p>주문 내역과 배송지를 확인하려면 로그인하세요.</p>
           </div>
 
           <div class="social-auth-grid" aria-label="소셜 로그인">
@@ -76,20 +51,6 @@
                 <span class="provider-mark provider-google" aria-hidden="true">G</span>
                 Google로 계속하기
               </span>
-            </button>
-            <button class="button oauth-button is-pending" type="button" data-oauth-provider="apple" data-provider-state="pending">
-              <span class="provider-label">
-                <span class="provider-mark provider-apple" aria-hidden="true">A</span>
-                Apple 로그인
-              </span>
-              <span class="provider-state">나중에 연결</span>
-            </button>
-            <button class="button oauth-button is-pending" type="button" data-oauth-provider="kakao" data-provider-state="pending">
-              <span class="provider-label">
-                <span class="provider-mark provider-kakao" aria-hidden="true">K</span>
-                Kakao 로그인
-              </span>
-              <span class="provider-state">심사 후 연결</span>
             </button>
           </div>
 
@@ -167,9 +128,14 @@
           <div class="auth-guest-panel">
             <div>
               <strong>비회원 주문</strong>
-              <p>PG와 약관 정책을 확정한 뒤 별도 주문 조회 방식으로 열 예정입니다.</p>
+              <p>별도 주문 조회 방식은 준비 중입니다.</p>
             </div>
             <button class="button secondary" type="button" data-guest-checkout>준비 중</button>
+          </div>
+
+          <div class="auth-pending-providers" aria-label="준비 중인 로그인">
+            <button type="button" data-oauth-provider="apple" data-provider-state="pending">Apple 준비 중</button>
+            <button type="button" data-oauth-provider="kakao" data-provider-state="pending">Kakao 심사 후 연결</button>
           </div>
 
           <p class="form-status" id="auth-status" aria-live="polite"></p>
@@ -180,7 +146,7 @@
     <script src="site-config.js?v=20260602-responsive-ui"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-auth-polish"></script>
-    <script src="auth.js?v=20260602-auth-polish"></script>
+    <script src="shop.js?v=20260602-auth-simple"></script>
+    <script src="auth.js?v=20260602-auth-simple"></script>
   </body>
 </html>
