@@ -9,11 +9,11 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="VELTIER 로그인" />
-    <meta property="og:description" content="Google, 이메일 인증, 비밀번호 로그인으로 VELTIER에 로그인하세요." />
+    <meta property="og:description" content="VELTIER 계정으로 주문 내역, 배송지, 리뷰를 관리하세요." />
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/auth.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-auth-flow" />
+    <link rel="stylesheet" href="styles.css?v=20260602-auth-polish" />
   </head>
   <body class="auth-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -37,15 +37,39 @@
       </nav>
     </header>
 
-    <main class="account-page-main auth-page-main">
-      <section class="account-hero" aria-labelledby="auth-title">
-        <p class="eyebrow">Sign in</p>
-        <h1 id="auth-title">로그인</h1>
-        <p>필요한 순간에만 로그인하고, 완료 후 원래 보던 화면으로 돌아갑니다.</p>
-      </section>
+    <main class="auth-page-main">
+      <section class="auth-commerce-shell" aria-labelledby="auth-title">
+        <aside class="auth-brand-panel">
+          <div class="auth-brand-copy">
+            <h1 id="auth-title">VELTIER 계정으로 주문을 이어가세요.</h1>
+            <p>주문 내역, 배송지, 리뷰를 한 곳에서 확인하고 다음 구매를 더 빠르게 진행하세요.</p>
+          </div>
+          <div class="auth-product-stage" aria-hidden="true">
+            <img src="assets/caseform-ivory-grid-concept.png" alt="" />
+          </div>
+          <div class="auth-account-points" aria-label="계정에서 확인할 수 있는 내용">
+            <article>
+              <span>Order</span>
+              <strong>주문·배송 조회</strong>
+            </article>
+            <article>
+              <span>Address</span>
+              <strong>기본 배송지 저장</strong>
+            </article>
+            <article>
+              <span>Review</span>
+              <strong>구매 리뷰 관리</strong>
+            </article>
+          </div>
+        </aside>
 
-      <section class="account-shell auth-shell" aria-label="로그인">
         <div class="account-panel auth-panel">
+          <div class="auth-panel-head">
+            <span>VELTIER Account</span>
+            <h2>로그인 또는 회원가입</h2>
+            <p>Google 또는 이메일로 시작하세요. 완료 후 원래 보던 화면으로 돌아갑니다.</p>
+          </div>
+
           <div class="social-auth-grid" aria-label="소셜 로그인">
             <button class="button oauth-button" type="button" data-oauth-provider="google" data-provider-state="active">
               <span class="provider-label">
@@ -150,34 +174,13 @@
 
           <p class="form-status" id="auth-status" aria-live="polite"></p>
         </div>
-
-        <aside class="account-panel auth-guide-panel" aria-label="로그인 안내">
-          <div class="account-panel-head">
-            <p class="eyebrow">Recommended</p>
-            <h2>VELTIER 로그인 구성</h2>
-          </div>
-          <div class="auth-method-list">
-            <article>
-              <strong>국내</strong>
-              <span>현재는 이메일과 Google을 사용하고, Kakao는 심사 승인 후 연결합니다.</span>
-            </article>
-            <article>
-              <strong>글로벌</strong>
-              <span>Google과 이메일 인증을 먼저 쓰고, Apple은 유료 개발자 계정 준비 후 연결합니다.</span>
-            </article>
-            <article>
-              <strong>비회원 주문</strong>
-              <span>주문 조회와 개인정보 처리 정책이 정리된 뒤 별도 단계에서 활성화합니다.</span>
-            </article>
-          </div>
-        </aside>
       </section>
     </main>
 
     <script src="site-config.js?v=20260602-responsive-ui"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-auth-flow"></script>
-    <script src="auth.js?v=20260602-auth-flow"></script>
+    <script src="shop.js?v=20260602-auth-polish"></script>
+    <script src="auth.js?v=20260602-auth-polish"></script>
   </body>
 </html>
