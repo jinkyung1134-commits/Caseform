@@ -1462,7 +1462,7 @@
 
   function renderCartCount() {
     const count = cartCount();
-    document.querySelectorAll(".mobile-icon-button.is-bag").forEach((button) => {
+    document.querySelectorAll(".mobile-icon-button.is-bag, [data-cart-open]").forEach((button) => {
       let badge = button.querySelector(".cart-count");
       if (!badge) {
         badge = document.createElement("span");
@@ -1580,11 +1580,17 @@
       renderCartDrawer(settings);
     });
 
-    document.querySelectorAll("[data-account-link]").forEach((link) => {
-      link.href = pageUrl("account.html", settings);
+    document.querySelectorAll("[data-account-link], [data-account-icon]").forEach((link) => {
+      link.href = pageUrl("account.html", window.caseformActiveSettings || settings);
     });
 
     document.querySelectorAll(".mobile-icon-button.is-account").forEach((button) => {
+      if (button.tagName === "A") {
+        const member = currentMember();
+        button.setAttribute("aria-label", member ? `${member.name} 마이페이지` : "마이페이지");
+        button.href = pageUrl("account.html", window.caseformActiveSettings || settings);
+        return;
+      }
       if (!button.dataset.accountBound) {
         button.dataset.accountBound = "true";
         button.addEventListener("click", () => {
@@ -1595,7 +1601,7 @@
       button.setAttribute("aria-label", member ? `${member.name} 마이페이지` : "마이페이지");
     });
 
-    document.querySelectorAll(".mobile-icon-button.is-bag").forEach((button) => {
+    document.querySelectorAll(".mobile-icon-button.is-bag, [data-cart-open]").forEach((button) => {
       if (!button.dataset.cartBound) {
         button.dataset.cartBound = "true";
         button.addEventListener("click", openCartDrawer);
