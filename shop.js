@@ -107,6 +107,16 @@
     return String(email || "").trim().toLowerCase();
   }
 
+  function normalizeCountryCode(value) {
+    const code = String(value || "KR").trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(code) ? code : "KR";
+  }
+
+  function isMissingColumn(error, columnName) {
+    const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`;
+    return error?.code === "42703" || message.includes(columnName);
+  }
+
   function formatWon(value) {
     return `${Number(value || 0).toLocaleString("ko-KR")}원`;
   }
@@ -216,6 +226,7 @@
       recipientName: row.recipient_name,
       phone: row.phone,
       email: row.email,
+      countryCode: row.country_code || "KR",
       postalCode: row.postal_code,
       address1: row.address1,
       address2: row.address2,
@@ -306,6 +317,7 @@
       label: row.label || "배송지",
       recipientName: row.recipient_name || "",
       phone: row.phone || "",
+      countryCode: row.country_code || "KR",
       postalCode: row.postal_code || "",
       address1: row.address1 || "",
       address2: row.address2 || "",
@@ -321,6 +333,7 @@
       label: String(address.label || "배송지").trim(),
       recipient_name: String(address.recipientName || "").trim(),
       phone: String(address.phone || "").trim(),
+      country_code: normalizeCountryCode(address.countryCode),
       postal_code: String(address.postalCode || "").trim(),
       address1: String(address.address1 || "").trim(),
       address2: String(address.address2 || "").trim(),
@@ -594,11 +607,21 @@
       return addressCache;
     }
 
-    const { data, error } = await client
+    let { data, error } = await client
       .from("user_addresses")
-      .select("id, user_id, label, recipient_name, phone, postal_code, address1, address2, delivery_note, is_default, created_at, updated_at")
+      .select("id, user_id, label, recipient_name, phone, country_code, postal_code, address1, address2, delivery_note, is_default, created_at, updated_at")
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
+
+    if (isMissingColumn(error, "country_code")) {
+      const retry = await client
+        .from("user_addresses")
+        .select("id, user_id, label, recipient_name, phone, postal_code, address1, address2, delivery_note, is_default, created_at, updated_at")
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true });
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.warn("VELTIER addresses could not be loaded.", error);
@@ -861,6 +884,7 @@
       label: String(address.label || "기본 배송지").trim(),
       recipientName: String(address.recipientName || member.name || "").trim(),
       phone: String(address.phone || member.phone || "").trim(),
+      countryCode: normalizeCountryCode(address.countryCode),
       postalCode: String(address.postalCode || "").trim(),
       address1: String(address.address1 || "").trim(),
       address2: String(address.address2 || "").trim(),
@@ -894,10 +918,19 @@
     }
 
     const row = { ...addressToRow(payload), user_id: authUser.id };
-    const query = payload.id
-      ? client.from("user_addresses").upsert({ ...row, id: payload.id }, { onConflict: "id" })
-      : client.from("user_addresses").insert(row);
-    const { data, error } = await query.select("*").single();
+    const saveRow = async (nextRow) => {
+      const query = payload.id
+        ? client.from("user_addresses").upsert({ ...nextRow, id: payload.id }, { onConflict: "id" })
+        : client.from("user_addresses").insert(nextRow);
+      return query.select("*").single();
+    };
+    let { data, error } = await saveRow(row);
+    if (isMissingColumn(error, "country_code")) {
+      const { country_code: _countryCode, ...fallbackRow } = row;
+      const retry = await saveRow(fallbackRow);
+      data = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
 
     await loadAddresses();
@@ -1185,6 +1218,7 @@
     recipientName,
     phone,
     email,
+    countryCode,
     postalCode,
     address1,
     address2,
@@ -1204,24 +1238,29 @@
     const shippingFee = subtotal >= 30000 ? 0 : 3000;
     const total = subtotal + shippingFee;
 
-    const { data: order, error: orderError } = await client
-      .from("orders")
-      .insert({
-        user_id: authUser.id,
-        recipient_name: String(recipientName || member.name || "").trim(),
-        phone: String(phone || member.phone || "").trim(),
-        email: normalizeEmail(email || member.email),
-        postal_code: String(postalCode || "").trim(),
-        address1: String(address1 || "").trim(),
-        address2: String(address2 || "").trim(),
-        delivery_note: String(deliveryNote || "").trim(),
-        subtotal,
-        shipping_fee: shippingFee,
-        total,
-        payment_provider: String(paymentProvider || "manual").trim(),
-      })
-      .select("*")
-      .single();
+    const orderPayload = {
+      user_id: authUser.id,
+      recipient_name: String(recipientName || member.name || "").trim(),
+      phone: String(phone || member.phone || "").trim(),
+      email: normalizeEmail(email || member.email),
+      country_code: normalizeCountryCode(countryCode),
+      postal_code: String(postalCode || "").trim(),
+      address1: String(address1 || "").trim(),
+      address2: String(address2 || "").trim(),
+      delivery_note: String(deliveryNote || "").trim(),
+      subtotal,
+      shipping_fee: shippingFee,
+      total,
+      payment_provider: String(paymentProvider || "manual").trim(),
+    };
+
+    let { data: order, error: orderError } = await client.from("orders").insert(orderPayload).select("*").single();
+    if (isMissingColumn(orderError, "country_code")) {
+      const { country_code: _countryCode, ...fallbackPayload } = orderPayload;
+      const retry = await client.from("orders").insert(fallbackPayload).select("*").single();
+      order = retry.data;
+      orderError = retry.error;
+    }
 
     if (orderError) throw orderError;
 

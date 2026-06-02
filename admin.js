@@ -176,7 +176,7 @@ function renderAdminOrders() {
           <div class="admin-order-meta">
             <span>${escapeHtml(order.phone)}</span>
             <span>${escapeHtml(order.email)}</span>
-            <span>${escapeHtml([order.postalCode, order.address1, order.address2].filter(Boolean).join(" "))}</span>
+            <span>${escapeHtml([order.countryCode || "KR", order.postalCode, order.address1, order.address2].filter(Boolean).join(" "))}</span>
           </div>
           <div class="admin-order-controls">
             <label>
@@ -712,6 +712,7 @@ function collectSettingsSafe() {
 function populate() {
   setField("brandName", settings.brandName);
   setField("pageTitle", settings.pageTitle);
+  setField("googleMapsApiKey", settings.integrations?.googleMapsApiKey || "");
   setField("heroTitle", settings.heroTitle);
   setField("heroSubtitle", settings.heroSubtitle);
   setField("heroSpecs", settings.heroSpecs.join(", "));
@@ -860,6 +861,9 @@ function collectSettings() {
       accent: form.elements.accent.value,
       accentSoft: form.elements.accentSoft.value,
       accentWarm: form.elements.accentWarm.value,
+    },
+    integrations: {
+      googleMapsApiKey: form.elements.googleMapsApiKey?.value.trim() || "",
     },
     heroEyebrow: settings.heroEyebrow,
     heroTitle: form.elements.heroTitle ? form.elements.heroTitle.value.trim() : settings.heroTitle,

@@ -2264,6 +2264,7 @@ legend,
 }
 
 .account-form input,
+.account-form select,
 .account-form textarea,
 .review-form input,
 .review-form select,
@@ -2278,6 +2279,7 @@ legend,
 }
 
 .account-form input:focus,
+.account-form select:focus,
 .account-form textarea:focus,
 .review-form input:focus,
 .review-form select:focus,
@@ -2287,6 +2289,7 @@ legend,
 }
 
 .account-form input:disabled,
+.account-form select:disabled,
 .account-form textarea:disabled,
 .review-form input:disabled,
 .review-form select:disabled,
@@ -2299,6 +2302,26 @@ legend,
 .compact-form {
   grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   align-items: end;
+}
+
+.address-lookup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.address-lookup-row .button {
+  grid-column: auto;
+  min-height: 43px;
+  white-space: nowrap;
+}
+
+.address-helper {
+  margin: -4px 0 0;
+  color: #6c6256;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .form-status {
@@ -2435,6 +2458,10 @@ legend,
 .checkout-form .button,
 .checkout-form .form-status {
   grid-column: 1 / -1;
+}
+
+.checkout-form .address-lookup-row .button {
+  grid-column: auto;
 }
 
 .checkout-form label {
@@ -3704,6 +3731,10 @@ body.account-page {
 
   .checkout-layout,
   .checkout-form {
+    grid-template-columns: 1fr;
+  }
+
+  .address-lookup-row {
     grid-template-columns: 1fr;
   }
 

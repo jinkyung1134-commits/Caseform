@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/account.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-prelaunch" />
+    <link rel="stylesheet" href="styles.css?v=20260602-address-search" />
   </head>
   <body class="account-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -151,9 +151,17 @@
               <input type="tel" name="phone" autocomplete="tel" required />
             </label>
             <label>
-              <span>우편번호</span>
-              <input type="text" name="postalCode" inputmode="numeric" autocomplete="postal-code" />
+              <span>국가/지역</span>
+              <select name="countryCode" autocomplete="country" data-country-select></select>
             </label>
+            <div class="address-lookup-row wide-field">
+              <label>
+                <span>우편번호</span>
+                <input type="text" name="postalCode" inputmode="numeric" autocomplete="postal-code" />
+              </label>
+              <button class="button secondary" type="button" data-address-search>주소 검색</button>
+            </div>
+            <p class="address-helper wide-field" data-address-helper></p>
             <label class="wide-field">
               <span>주소</span>
               <input type="text" name="address1" autocomplete="street-address" required />
@@ -185,10 +193,12 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260602-commerce-core"></script>
+    <script src="site-config.js?v=20260602-address-search"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-prelaunch"></script>
-    <script src="account.js?v=20260602-prelaunch"></script>
+    <script src="shop.js?v=20260602-address-search"></script>
+    <script src="maps-config.js?v=20260602-address-search"></script>
+    <script src="address-search.js?v=20260602-address-search"></script>
+    <script src="account.js?v=20260602-address-search"></script>
   </body>
 </html>

@@ -38,6 +38,24 @@ function escapeHtml(value) {
   return window.CaseformConfig.escapeHtml(String(value || ""));
 }
 
+function countryLabel(countryCode = "KR") {
+  const labels = {
+    KR: "대한민국",
+    US: "미국",
+    JP: "일본",
+    CN: "중국",
+    TW: "대만",
+    HK: "홍콩",
+    SG: "싱가포르",
+    AU: "호주",
+    CA: "캐나다",
+    GB: "영국",
+    FR: "프랑스",
+    DE: "독일",
+  };
+  return labels[String(countryCode || "KR").toUpperCase()] || String(countryCode || "KR").toUpperCase();
+}
+
 function roleLabel(role) {
   const labels = {
     admin: "관리자 계정",
@@ -209,11 +227,13 @@ function fillAddressForm(address = null) {
   addressForm.elements.label.value = address?.label || "기본 배송지";
   addressForm.elements.recipientName.value = address?.recipientName || member?.name || "";
   addressForm.elements.phone.value = address?.phone || member?.phone || "";
+  if (addressForm.elements.countryCode) addressForm.elements.countryCode.value = address?.countryCode || "KR";
   addressForm.elements.postalCode.value = address?.postalCode || "";
   addressForm.elements.address1.value = address?.address1 || "";
   addressForm.elements.address2.value = address?.address2 || "";
   addressForm.elements.deliveryNote.value = address?.deliveryNote || "";
   addressForm.elements.isDefault.checked = address ? Boolean(address.isDefault) : true;
+  addressForm.elements.countryCode?.dispatchEvent(new Event("change"));
 }
 
 function renderAddressSummary() {
@@ -242,7 +262,7 @@ function renderAddressSummary() {
         <div class="account-list-item address-item" data-address-id="${escapeHtml(address.id)}">
           <strong>${escapeHtml(address.label)}${address.isDefault ? " · 기본" : ""}</strong>
           <span>${escapeHtml(address.recipientName)} · ${escapeHtml(address.phone)}</span>
-          <small>${escapeHtml([address.postalCode, address.address1, address.address2].filter(Boolean).join(" "))}</small>
+          <small>${escapeHtml([countryLabel(address.countryCode), address.postalCode, address.address1, address.address2].filter(Boolean).join(" "))}</small>
           ${address.deliveryNote ? `<small>${escapeHtml(address.deliveryNote)}</small>` : ""}
           <div class="account-inline-actions">
             <button class="button secondary" type="button" data-address-edit>수정</button>
@@ -389,6 +409,7 @@ window.addEventListener("storage", renderAccount);
 window.addEventListener("caseform:shop-updated", renderAccount);
 
 async function boot() {
+  window.CaseformAddressSearch?.bindAddressForm(addressForm, { statusNode: addressStatus });
   await hydrateProductSettings();
   await applySettings();
   setupHeaderMenu();

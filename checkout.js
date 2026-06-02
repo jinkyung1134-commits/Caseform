@@ -87,15 +87,18 @@ function fillMemberFields() {
   checkoutForm.elements.recipientName.value = member.name || "";
   checkoutForm.elements.phone.value = member.phone || "";
   checkoutForm.elements.email.value = member.email || "";
+  if (checkoutForm.elements.countryCode) checkoutForm.elements.countryCode.value = "KR";
   const address = shop.getDefaultAddress ? shop.getDefaultAddress() : null;
   if (address) {
     checkoutForm.elements.recipientName.value = address.recipientName || checkoutForm.elements.recipientName.value;
     checkoutForm.elements.phone.value = address.phone || checkoutForm.elements.phone.value;
+    if (checkoutForm.elements.countryCode) checkoutForm.elements.countryCode.value = address.countryCode || "KR";
     checkoutForm.elements.postalCode.value = address.postalCode || "";
     checkoutForm.elements.address1.value = address.address1 || "";
     checkoutForm.elements.address2.value = address.address2 || "";
     checkoutForm.elements.deliveryNote.value = address.deliveryNote || "";
   }
+  checkoutForm.elements.countryCode?.dispatchEvent(new Event("change"));
   orderSubmit.disabled = !shop.getCart().length;
 }
 
@@ -153,6 +156,7 @@ checkoutForm.addEventListener("submit", async (event) => {
         label: "기본 배송지",
         recipientName: formValues.recipientName,
         phone: formValues.phone,
+        countryCode: formValues.countryCode,
         postalCode: formValues.postalCode,
         address1: formValues.address1,
         address2: formValues.address2,
@@ -180,6 +184,7 @@ window.addEventListener("caseform:shop-updated", () => {
 });
 
 async function boot() {
+  window.CaseformAddressSearch?.bindAddressForm(checkoutForm, { statusNode: checkoutStatus });
   await hydrateProductSettings();
   applySettings();
   setupHeaderMenu();

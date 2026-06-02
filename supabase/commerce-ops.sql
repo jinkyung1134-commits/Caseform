@@ -2,6 +2,7 @@
 -- Run this after supabase/schema.sql when adding order management, inventory, and notification queues.
 
 alter table public.orders
+  add column if not exists country_code text not null default 'KR',
   add column if not exists tracking_number text default '',
   add column if not exists tracking_url text default '',
   add column if not exists admin_note text default '',
@@ -40,6 +41,7 @@ create table if not exists public.user_addresses (
   label text not null default '기본 배송지',
   recipient_name text not null,
   phone text not null,
+  country_code text not null default 'KR',
   postal_code text default '',
   address1 text not null,
   address2 text default '',
@@ -48,6 +50,9 @@ create table if not exists public.user_addresses (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_addresses
+  add column if not exists country_code text not null default 'KR';
 
 alter table public.product_variants enable row level security;
 alter table public.notification_events enable row level security;

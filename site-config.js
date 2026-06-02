@@ -250,6 +250,9 @@
       accentSoft: "#f3d891",
       accentWarm: "#b8892f",
     },
+    integrations: {
+      googleMapsApiKey: "",
+    },
     heroEyebrow: "Drop 01 / White Line",
     heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
     heroSubtitle:
@@ -353,6 +356,10 @@
   function compactForUrl(settings) {
     const compact = clone(settings);
 
+    if (compact.integrations) {
+      compact.integrations.googleMapsApiKey = "";
+    }
+
     compact.products = compact.products.map((product) => {
       const nextProduct = { ...product };
       if (/^data:/i.test(nextProduct.image || "")) delete nextProduct.image;
@@ -410,6 +417,7 @@
     }
 
     merged.colors = { ...base.colors, ...(saved && saved.colors ? saved.colors : {}) };
+    merged.integrations = { ...base.integrations, ...(saved && saved.integrations ? saved.integrations : {}) };
     if (Array.isArray(saved && saved.products)) {
       const productCount = Math.max(base.products.length, saved.products.length);
       merged.products = Array.from({ length: productCount }, (_, index) =>

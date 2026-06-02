@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20260602-prelaunch" />
+    <link rel="stylesheet" href="styles.css?v=20260602-address-search" />
     <link rel="stylesheet" href="admin.css?v=20260602-prelaunch" />
   </head>
   <body class="admin-body">
@@ -177,6 +177,11 @@
               <span>브라우저 제목</span>
               <input name="pageTitle" type="text" />
             </label>
+            <label class="wide-field">
+              <span>Google Maps API 키</span>
+              <input name="googleMapsApiKey" type="text" placeholder="해외 주소 자동완성용 공개 키" autocomplete="off" />
+            </label>
+            <p class="admin-helper wide-field">Google Cloud에서 HTTP 리퍼러 제한을 걸어둔 브라우저용 키만 입력하세요.</p>
           </section>
 
           <section class="admin-panel" aria-labelledby="hero-panel">
@@ -292,10 +297,10 @@
       </div>
     </main>
 
-    <script src="site-config.js?v=20260602-commerce-core"></script>
+    <script src="site-config.js?v=20260602-address-search"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-prelaunch"></script>
-    <script src="admin.js?v=20260602-prelaunch"></script>
+    <script src="shop.js?v=20260602-address-search"></script>
+    <script src="admin.js?v=20260602-address-search"></script>
   </body>
 </html>
