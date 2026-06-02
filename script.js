@@ -54,6 +54,18 @@ function clampNumber(value, fallback, min, max) {
   return Math.min(Math.max(resolved, min), max);
 }
 
+function activeScreenKey() {
+  return catalogMobileQuery.matches ? "mobile" : "desktop";
+}
+
+function responsiveProfile(sourceSettings = settings, screenKey = activeScreenKey()) {
+  const fallback = window.CASEFORM_DEFAULTS.responsive?.[screenKey] || {};
+  return {
+    ...fallback,
+    ...(sourceSettings.responsive?.[screenKey] || {}),
+  };
+}
+
 function heroMediaBackdropMarkup(product) {
   const kind = productMediaKind(product);
 
@@ -96,9 +108,12 @@ function heroTransitionMs() {
 
 function applySettings() {
   const root = document.documentElement;
+  const screenKey = activeScreenKey();
+  const screenProfile = responsiveProfile(settings, screenKey);
   const mediaDarkness = clampNumber(settings.heroMediaDarkness, 58, 0, 90);
   const mediaFade = clampNumber(settings.heroMediaFade, 72, 0, 100);
   const transitionDuration = heroTransitionMs();
+  const mediaScale = clampNumber(screenProfile.heroMediaScale, 100, 80, 150);
 
   root.style.setProperty("--accent", settings.colors.accent);
   root.style.setProperty("--accent-dark", settings.colors.accentSoft);
@@ -109,9 +124,13 @@ function applySettings() {
   root.style.setProperty("--hero-media-edge", `${(8 + mediaFade * 0.22).toFixed(1)}%`);
   root.style.setProperty("--hero-media-backdrop-opacity", (0.24 + mediaFade * 0.004).toFixed(2));
   root.style.setProperty("--hero-transition-duration", `${transitionDuration}ms`);
+  root.style.setProperty("--hero-media-scale", (mediaScale / 100).toFixed(2));
 
   document.title = settings.pageTitle;
   document.body.classList.toggle("gold-finish", Boolean(settings.goldFinish));
+  document.body.dataset.screenVersion = screenKey;
+  document.body.dataset.heroLayout = screenProfile.heroLayout || (screenKey === "mobile" ? "immersive" : "split");
+  document.body.dataset.heroTextAlign = screenProfile.heroTextAlign || (screenKey === "mobile" ? "center" : "left");
 
   [
     "brandName",
@@ -286,7 +305,9 @@ function preventHeroSwipeClick(event) {
 }
 
 function renderProducts() {
-  const previewCount = catalogMobileQuery.matches ? 4 : 8;
+  const screenProfile = responsiveProfile(settings);
+  const fallbackCount = catalogMobileQuery.matches ? 4 : 8;
+  const previewCount = Math.round(clampNumber(screenProfile.productPreviewCount, fallbackCount, 2, 12));
   const visibleProducts = products.slice(0, previewCount);
 
   productGrid.innerHTML = visibleProducts
@@ -394,6 +415,7 @@ if (mobileMenuButton && siteHeader) {
 }
 
 catalogMobileQuery.addEventListener("change", () => {
+  applySettings();
   renderProducts();
 });
 

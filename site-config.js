@@ -244,6 +244,20 @@
     heroMediaMode: "blend",
     heroMediaDarkness: 58,
     heroMediaFade: 72,
+    responsive: {
+      desktop: {
+        heroLayout: "split",
+        heroTextAlign: "left",
+        heroMediaScale: 100,
+        productPreviewCount: 8,
+      },
+      mobile: {
+        heroLayout: "immersive",
+        heroTextAlign: "center",
+        heroMediaScale: 108,
+        productPreviewCount: 4,
+      },
+    },
     goldFinish: true,
     colors: {
       accent: "#d6b25e",
@@ -356,6 +370,30 @@
     return merged;
   }
 
+  function clampRange(value, fallback, min, max) {
+    const number = Number(value);
+    const resolved = Number.isFinite(number) ? number : fallback;
+    return Math.min(Math.max(resolved, min), max);
+  }
+
+  function mergeResponsiveProfile(baseProfile, savedProfile, device) {
+    const saved = savedProfile || {};
+    const desktopLayouts = ["split", "focus", "center"];
+    const mobileLayouts = ["immersive", "compact", "poster"];
+    const layouts = device === "mobile" ? mobileLayouts : desktopLayouts;
+    const textAlignments = ["left", "center"];
+    const previewBounds = device === "mobile" ? [2, 10] : [4, 12];
+
+    return {
+      heroLayout: layouts.includes(saved.heroLayout) ? saved.heroLayout : baseProfile.heroLayout,
+      heroTextAlign: textAlignments.includes(saved.heroTextAlign) ? saved.heroTextAlign : baseProfile.heroTextAlign,
+      heroMediaScale: clampRange(saved.heroMediaScale, Number(baseProfile.heroMediaScale) || 100, 80, 150),
+      productPreviewCount: Math.round(
+        clampRange(saved.productPreviewCount, Number(baseProfile.productPreviewCount) || previewBounds[0], previewBounds[0], previewBounds[1]),
+      ),
+    };
+  }
+
   function compactForUrl(settings) {
     const compact = clone(settings);
 
@@ -422,6 +460,10 @@
 
     merged.colors = { ...base.colors, ...(saved && saved.colors ? saved.colors : {}) };
     merged.integrations = { ...base.integrations, ...(saved && saved.integrations ? saved.integrations : {}) };
+    merged.responsive = {
+      desktop: mergeResponsiveProfile(base.responsive.desktop, saved && saved.responsive ? saved.responsive.desktop : null, "desktop"),
+      mobile: mergeResponsiveProfile(base.responsive.mobile, saved && saved.responsive ? saved.responsive.mobile : null, "mobile"),
+    };
     if (Array.isArray(saved && saved.products)) {
       const productCount = Math.max(base.products.length, saved.products.length);
       merged.products = Array.from({ length: productCount }, (_, index) =>

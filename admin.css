@@ -322,6 +322,37 @@
   min-width: 0;
 }
 
+.ui-device-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-device-tabs button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ui-device-tabs button.is-active {
+  border-color: color-mix(in srgb, var(--gold), transparent 32%);
+  background: #171411;
+  color: #ffffff;
+}
+
+.ui-device-panel {
+  display: none;
+}
+
+.ui-device-panel.is-active {
+  display: grid;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -832,6 +863,7 @@
 
 .preview-frame {
   position: relative;
+  --preview-media-scale: 1;
   min-height: 300px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -866,6 +898,50 @@
   width: 100%;
   border-top: 1px solid var(--gold);
   border-left: 0;
+}
+
+.preview-frame[data-hero-text-align="center"] .preview-copy {
+  max-width: 78%;
+  text-align: center;
+}
+
+.preview-frame[data-hero-layout="center"][data-preview-mode="desktop"] .preview-copy {
+  max-width: 82%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.preview-frame[data-hero-layout="center"][data-preview-mode="desktop"] .preview-photo {
+  left: 0;
+  width: 100%;
+  opacity: 0.42;
+  border-left: 0;
+}
+
+.preview-frame[data-hero-layout="focus"][data-preview-mode="desktop"] .preview-photo {
+  width: 56%;
+}
+
+.preview-frame[data-hero-layout="compact"][data-preview-mode="mobile"] {
+  min-height: 410px;
+}
+
+.preview-frame[data-hero-layout="compact"][data-preview-mode="mobile"] .preview-photo {
+  top: 39%;
+}
+
+.preview-frame[data-hero-layout="poster"][data-preview-mode="mobile"] .preview-photo {
+  top: 31%;
+  right: 18px;
+  bottom: 22px;
+  left: 18px;
+  width: auto;
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 45%);
+  border-radius: 18px;
+}
+
+.preview-frame[data-hero-text-align="left"][data-preview-mode="mobile"] .preview-copy {
+  text-align: left;
 }
 
 .preview-copy {
@@ -951,6 +1027,8 @@
   padding: 16px;
   object-fit: contain;
   filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.58));
+  transform: scale(var(--preview-media-scale));
+  transform-origin: center;
 }
 
 .preview-photo[data-media-mode="blend"] .preview-product-media {
@@ -1023,6 +1101,8 @@
   align-self: center;
   justify-self: center;
   border-radius: 24px;
+  transform: scale(var(--preview-media-scale));
+  transform-origin: center;
 }
 
 .admin-actions {

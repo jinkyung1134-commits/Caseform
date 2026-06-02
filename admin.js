@@ -39,6 +39,8 @@ const adminWorkspaceCopy = document.querySelector("#admin-workspace-copy");
 const adminCustomerList = document.querySelector("#admin-customer-list");
 const previewFrame = document.querySelector("#admin-preview-frame");
 const previewModeButtons = [...document.querySelectorAll("[data-preview-mode]")];
+const uiDeviceTabButtons = [...document.querySelectorAll("[data-ui-device-tab]")];
+const uiDevicePanels = [...document.querySelectorAll("[data-ui-device-panel]")];
 const productAddButton = document.querySelector("#product-add-button");
 const productSaveDraftButton = document.querySelector("#product-save-draft-button");
 const imagePreset = form.elements.heroImagePreset || null;
@@ -182,7 +184,7 @@ function setAdminView(view, options = {}) {
   }
 }
 
-function setPreviewMode(mode) {
+function setPreviewMode(mode, options = {}) {
   if (!previewFrame) return;
   const nextMode = mode === "mobile" ? "mobile" : "desktop";
   previewFrame.dataset.previewMode = nextMode;
@@ -191,6 +193,23 @@ function setPreviewMode(mode) {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
+  if (options.syncTab !== false) setUiDevicePanel(nextMode, { syncPreview: false });
+  if (options.refresh !== false && form) updatePreview();
+}
+
+function setUiDevicePanel(device, options = {}) {
+  const nextDevice = device === "mobile" ? "mobile" : "desktop";
+  uiDeviceTabButtons.forEach((button) => {
+    const isActive = button.dataset.uiDeviceTab === nextDevice;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  uiDevicePanels.forEach((panel) => {
+    const isActive = panel.dataset.uiDevicePanel === nextDevice;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+  if (options.syncPreview !== false) setPreviewMode(nextDevice, { syncTab: false });
 }
 
 function setAdminAuthStatus(message, tone = "neutral") {
@@ -711,6 +730,14 @@ function clampNumber(value, fallback, min, max) {
   return Math.min(Math.max(resolved, min), max);
 }
 
+function responsiveProfile(sourceSettings, device) {
+  const fallback = window.CASEFORM_DEFAULTS.responsive?.[device] || {};
+  return {
+    ...fallback,
+    ...(sourceSettings.responsive?.[device] || {}),
+  };
+}
+
 function applyHeroMediaVars(sourceSettings) {
   const mediaDarkness = clampNumber(sourceSettings.heroMediaDarkness, 58, 0, 90);
   const mediaFade = clampNumber(sourceSettings.heroMediaFade, 72, 0, 100);
@@ -837,10 +864,20 @@ function updatePreview() {
 
   document.body.classList.toggle("gold-finish", form.elements.goldFinish.checked);
   const previewSettings = collectSettingsSafe();
+  const previewMode = previewFrame?.dataset.previewMode === "mobile" ? "mobile" : "desktop";
+  const previewProfile = responsiveProfile(previewSettings, previewMode);
   applyHeroMediaVars(previewSettings);
   const previewProduct =
     previewSettings.products.find((product) => product.showInHero) || previewSettings.products[0];
   const previewPhoto = document.querySelector("#preview-photo");
+  if (previewFrame) {
+    previewFrame.dataset.heroLayout = previewProfile.heroLayout;
+    previewFrame.dataset.heroTextAlign = previewProfile.heroTextAlign;
+    previewFrame.style.setProperty(
+      "--preview-media-scale",
+      (clampNumber(previewProfile.heroMediaScale, 100, 80, 150) / 100).toFixed(2),
+    );
+  }
   document.querySelector("#preview-title-text").textContent = previewProduct.name;
   document.querySelector("#preview-subtitle").textContent = previewProduct.description;
   previewPhoto.dataset.mediaMode = previewSettings.heroMediaMode || "blend";
@@ -872,6 +909,8 @@ function collectSettingsSafe() {
 }
 
 function populate() {
+  const desktopProfile = responsiveProfile(settings, "desktop");
+  const mobileProfile = responsiveProfile(settings, "mobile");
   setField("brandName", settings.brandName);
   setField("pageTitle", settings.pageTitle);
   setField("googleMapsApiKey", settings.integrations?.googleMapsApiKey || "");
@@ -886,6 +925,14 @@ function populate() {
   setField("heroMediaMode", settings.heroMediaMode);
   setField("heroMediaDarkness", settings.heroMediaDarkness);
   setField("heroMediaFade", settings.heroMediaFade);
+  setField("desktopHeroLayout", desktopProfile.heroLayout);
+  setField("desktopHeroTextAlign", desktopProfile.heroTextAlign);
+  setField("desktopHeroMediaScale", desktopProfile.heroMediaScale);
+  setField("desktopProductPreviewCount", desktopProfile.productPreviewCount);
+  setField("mobileHeroLayout", mobileProfile.heroLayout);
+  setField("mobileHeroTextAlign", mobileProfile.heroTextAlign);
+  setField("mobileHeroMediaScale", mobileProfile.heroMediaScale);
+  setField("mobileProductPreviewCount", mobileProfile.productPreviewCount);
   setField("heroImage", settings.heroImage);
   setField("goldFinish", settings.goldFinish);
   setField("accent", settings.colors.accent);
@@ -1008,6 +1055,18 @@ function updateProductPreviews(sourceSettings = collectSettingsSafe()) {
   });
 }
 
+function collectResponsiveProfile(device) {
+  const prefix = device === "mobile" ? "mobile" : "desktop";
+  const fallback = responsiveProfile(settings, device);
+  return {
+    heroLayout: form.elements[`${prefix}HeroLayout`]?.value || fallback.heroLayout,
+    heroTextAlign: form.elements[`${prefix}HeroTextAlign`]?.value || fallback.heroTextAlign,
+    heroMediaScale: Number(form.elements[`${prefix}HeroMediaScale`]?.value) || fallback.heroMediaScale,
+    productPreviewCount:
+      Number(form.elements[`${prefix}ProductPreviewCount`]?.value) || fallback.productPreviewCount,
+  };
+}
+
 function collectSettings() {
   const heroSpecs = form.elements.heroSpecs
     ? form.elements.heroSpecs.value
@@ -1032,6 +1091,10 @@ function collectSettings() {
       tossClientKey: form.elements.tossClientKey?.value.trim() || "",
       supportEmail: form.elements.supportEmail?.value.trim() || "",
       customDomain: form.elements.customDomain?.value.trim() || "",
+    },
+    responsive: {
+      desktop: collectResponsiveProfile("desktop"),
+      mobile: collectResponsiveProfile("mobile"),
     },
     heroEyebrow: settings.heroEyebrow,
     heroTitle: form.elements.heroTitle ? form.elements.heroTitle.value.trim() : settings.heroTitle,
@@ -1179,7 +1242,8 @@ function readProductFile(input) {
 }
 
 setAdminView(initialAdminView(), { updateHash: false });
-setPreviewMode(previewFrame?.dataset.previewMode || "desktop");
+setUiDevicePanel("desktop", { syncPreview: false });
+setPreviewMode(previewFrame?.dataset.previewMode || "desktop", { refresh: false });
 bootAdmin();
 
 adminMenuButtons.forEach((button) => {
@@ -1188,6 +1252,10 @@ adminMenuButtons.forEach((button) => {
 
 previewModeButtons.forEach((button) => {
   button.addEventListener("click", () => setPreviewMode(button.dataset.previewMode));
+});
+
+uiDeviceTabButtons.forEach((button) => {
+  button.addEventListener("click", () => setUiDevicePanel(button.dataset.uiDeviceTab));
 });
 
 window.addEventListener("hashchange", () => {
