@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/account.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260602-auth-page" />
+    <link rel="stylesheet" href="styles.css?v=20260602-auth-flow" />
   </head>
   <body class="account-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -66,6 +66,10 @@
             <button class="button secondary" id="signout-action" type="button">로그아웃</button>
           </div>
           <form class="account-form compact-form" id="profile-form">
+            <label>
+              <span>이메일</span>
+              <input type="email" name="email" readonly disabled />
+            </label>
             <label>
               <span>이름</span>
               <input type="text" name="name" required />
@@ -160,9 +164,9 @@
     <script src="site-config.js?v=20260602-responsive-ui"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-auth-page"></script>
+    <script src="shop.js?v=20260602-auth-flow"></script>
     <script src="maps-config.js?v=20260602-address-search"></script>
     <script src="address-search.js?v=20260602-address-search"></script>
-    <script src="account.js?v=20260602-auth-page"></script>
+    <script src="account.js?v=20260602-auth-flow"></script>
   </body>
 </html>

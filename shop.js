@@ -733,7 +733,7 @@
     return initPromise;
   }
 
-  async function signUp({ name, email, password, phone }) {
+  async function signUp({ name, email, password, phone, redirectTo }) {
     const cleanEmail = normalizeEmail(email);
     const cleanName = String(name || "").trim();
     const cleanPassword = String(password || "");
@@ -769,7 +769,7 @@
       password: cleanPassword,
       options: {
         data: { name: cleanName, phone: cleanPhone },
-        emailRedirectTo: oauthRedirectUrl(),
+        emailRedirectTo: redirectTo || oauthRedirectUrl(),
       },
     });
 
@@ -874,6 +874,41 @@
     });
 
     if (error) throw error;
+    return data;
+  }
+
+  async function sendPasswordReset({ email, redirectTo } = {}) {
+    const cleanEmail = normalizeEmail(email);
+    if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("이메일을 확인해주세요.");
+    if (!client) throw new Error("비밀번호 재설정은 Supabase 연결 후 사용할 수 있습니다.");
+
+    const { data, error } = await client.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: redirectTo || oauthRedirectUrl(),
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async function updatePassword({ password } = {}) {
+    const cleanPassword = String(password || "");
+    if (cleanPassword.length < 6) throw new Error("새 비밀번호는 6자 이상 입력해주세요.");
+
+    if (!client) {
+      const member = localCurrentMember();
+      if (!member) throw new Error("로그인 후 비밀번호를 변경할 수 있습니다.");
+      const members = getMembers().map((item) =>
+        item.email === member.email ? { ...item, password: cleanPassword } : item,
+      );
+      setMembers(members);
+      dispatchShopUpdate();
+      return true;
+    }
+
+    const { data, error } = await client.auth.updateUser({ password: cleanPassword });
+    if (error) throw error;
+    authUser = data.user || authUser;
+    await loadProfile();
+    dispatchShopUpdate();
     return data;
   }
 
@@ -1703,6 +1738,8 @@
     signInWithProvider,
     signInWithGoogle,
     signInWithOtp,
+    sendPasswordReset,
+    updatePassword,
     signOut,
     updateProfile,
     getCart,

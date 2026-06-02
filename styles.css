@@ -2206,11 +2206,12 @@ legend,
 .oauth-button {
   width: 100%;
   min-height: 46px;
-  justify-content: center;
+  justify-content: space-between;
   gap: 10px;
   border: 1px solid rgba(23, 20, 17, 0.14);
   background: #ffffff;
   color: #171411;
+  text-align: left;
 }
 
 .oauth-button:hover {
@@ -2221,6 +2222,39 @@ legend,
 .oauth-button:disabled {
   opacity: 0.58;
   cursor: wait;
+}
+
+.oauth-button:not(.is-pending) {
+  justify-content: center;
+}
+
+.oauth-button.is-pending {
+  border-color: rgba(23, 20, 17, 0.1);
+  background: #f6f2ea;
+  color: rgba(23, 20, 17, 0.62);
+  cursor: pointer;
+}
+
+.oauth-button.is-pending:hover {
+  border-color: rgba(23, 20, 17, 0.1);
+  background: #f6f2ea;
+}
+
+.provider-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.provider-state {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(184, 137, 47, 0.14);
+  color: #7b5a1b;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .google-mark {
@@ -2245,7 +2279,7 @@ legend,
 }
 
 .auth-tabs {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .social-auth-grid,
@@ -2305,6 +2339,30 @@ legend,
 .auth-forward-button {
   width: fit-content;
   margin-top: 16px;
+}
+
+.auth-note,
+.auth-guest-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.auth-guest-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(23, 20, 17, 0.08);
+  border-radius: var(--radius);
+  background: #fbfaf7;
+}
+
+.auth-guest-panel strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #171411;
 }
 
 .auth-divider {
@@ -2961,6 +3019,14 @@ legend,
   .account-shell,
   .account-dashboard,
   .reviews-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-guest-panel {
     grid-template-columns: 1fr;
   }
 

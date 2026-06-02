@@ -5,9 +5,16 @@ const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const otpForm = document.querySelector("#otp-form");
 const loginForm = document.querySelector("#login-form");
+const resetForm = document.querySelector("#reset-form");
+const updatePasswordForm = document.querySelector("#update-password-form");
 const signupForm = document.querySelector("#signup-form");
 const authStatus = document.querySelector("#auth-status");
 const providerButtons = [...document.querySelectorAll("[data-oauth-provider]")];
+const guestCheckoutButton = document.querySelector("[data-guest-checkout]");
+const pendingProviderMessages = {
+  apple: "Apple 로그인은 Apple Developer 유료 계정 준비 후 연결할 예정입니다.",
+  kakao: "Kakao 로그인은 카카오 심사 승인 후 연결할 예정입니다.",
+};
 
 function pageUrl(page, params) {
   return window.CaseformConfig.urlFor(page, settings, params);
@@ -28,13 +35,23 @@ function nextUrl() {
 
 function cleanAuthRedirectUrl() {
   const url = new URL(window.location.href);
-  ["code", "state", "error", "error_code", "error_description"].forEach((key) => {
+  ["code", "state", "error", "error_code", "error_description", "mode"].forEach((key) => {
     url.searchParams.delete(key);
   });
   if (!url.searchParams.get("next")) {
     url.searchParams.set("next", nextUrl());
   }
   return url.href;
+}
+
+function passwordRecoveryRedirectUrl() {
+  const url = new URL(cleanAuthRedirectUrl());
+  url.searchParams.set("mode", "update-password");
+  return url.href;
+}
+
+function isPasswordRecoveryMode() {
+  return new URLSearchParams(window.location.search).get("mode") === "update-password";
 }
 
 function providerLabel(provider) {
@@ -94,11 +111,14 @@ function setAuthTab(tabName) {
   });
   otpForm.classList.toggle("is-hidden", tabName !== "otp");
   loginForm.classList.toggle("is-hidden", tabName !== "password");
+  resetForm.classList.toggle("is-hidden", tabName !== "reset");
+  updatePasswordForm.classList.toggle("is-hidden", tabName !== "update");
   signupForm.classList.toggle("is-hidden", tabName !== "signup");
   authStatus.textContent = "";
 }
 
 function redirectIfSignedIn() {
+  if (isPasswordRecoveryMode()) return false;
   if (!shop.currentMember()) return false;
   window.location.href = nextUrl();
   return true;
@@ -111,6 +131,11 @@ document.querySelectorAll("[data-auth-tab]").forEach((button) => {
 providerButtons.forEach((button) => {
   button.addEventListener("click", async () => {
     const provider = button.dataset.oauthProvider;
+    if (button.dataset.providerState !== "active") {
+      authStatus.textContent = pendingProviderMessages[provider] || `${providerLabel(provider)} 로그인은 아직 준비 중입니다.`;
+      return;
+    }
+
     authStatus.textContent = `${providerLabel(provider)} 로그인 화면으로 이동합니다.`;
     providerButtons.forEach((item) => {
       item.disabled = true;
@@ -127,6 +152,10 @@ providerButtons.forEach((button) => {
   });
 });
 
+guestCheckoutButton?.addEventListener("click", () => {
+  authStatus.textContent = "비회원 주문은 PG, 주문 조회, 개인정보 처리 정책을 확정한 뒤 열 예정입니다. 지금은 회원 주문으로 테스트해주세요.";
+});
+
 otpForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authStatus.textContent = "인증 링크를 보내는 중입니다.";
@@ -139,6 +168,40 @@ otpForm.addEventListener("submit", async (event) => {
     authStatus.textContent = "이메일로 인증 링크를 보냈습니다. 메일함에서 링크를 눌러주세요.";
   } catch (error) {
     authStatus.textContent = error.message || "이메일 인증을 시작하지 못했습니다.";
+  }
+});
+
+resetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authStatus.textContent = "비밀번호 재설정 메일을 보내는 중입니다.";
+  try {
+    await shop.sendPasswordReset({
+      ...Object.fromEntries(new FormData(resetForm)),
+      redirectTo: passwordRecoveryRedirectUrl(),
+    });
+    resetForm.reset();
+    authStatus.textContent = "비밀번호 재설정 메일을 보냈습니다. 메일함에서 링크를 눌러 새 비밀번호를 저장해주세요.";
+  } catch (error) {
+    authStatus.textContent = error.message || "비밀번호 재설정 메일을 보내지 못했습니다.";
+  }
+});
+
+updatePasswordForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formValues = Object.fromEntries(new FormData(updatePasswordForm));
+  if (formValues.password !== formValues.confirmPassword) {
+    authStatus.textContent = "새 비밀번호가 서로 다릅니다.";
+    return;
+  }
+
+  authStatus.textContent = "새 비밀번호를 저장하는 중입니다.";
+  try {
+    await shop.updatePassword(formValues);
+    updatePasswordForm.reset();
+    authStatus.textContent = "비밀번호가 변경되었습니다. 마이페이지로 이동합니다.";
+    window.location.href = nextUrl();
+  } catch (error) {
+    authStatus.textContent = error.message || "새 비밀번호를 저장하지 못했습니다.";
   }
 });
 
@@ -159,11 +222,14 @@ signupForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   authStatus.textContent = "가입을 처리하고 있습니다.";
   try {
-    const result = await shop.signUp(Object.fromEntries(new FormData(signupForm)));
+    const result = await shop.signUp({
+      ...Object.fromEntries(new FormData(signupForm)),
+      redirectTo: cleanAuthRedirectUrl(),
+    });
     signupForm.reset();
     if (result.needsEmailConfirmation) {
-      authStatus.textContent = "가입 확인 메일을 보냈습니다. 메일함에서 인증 후 로그인해주세요.";
       setAuthTab("password");
+      authStatus.textContent = "가입 확인 메일을 보냈습니다. 메일함에서 인증 후 로그인해주세요.";
       return;
     }
     window.location.href = nextUrl();
@@ -182,6 +248,11 @@ async function boot() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("error") || params.get("error_description")) {
     authStatus.textContent = params.get("error_description") || "로그인을 완료하지 못했습니다.";
+  }
+  if (isPasswordRecoveryMode()) {
+    setAuthTab("update");
+    authStatus.textContent = "새 비밀번호를 입력해 계정 비밀번호를 변경하세요.";
+    return;
   }
 
   redirectIfSignedIn();

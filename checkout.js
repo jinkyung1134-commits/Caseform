@@ -156,7 +156,9 @@ function fillMemberFields() {
   const member = shop.currentMember();
   if (!member) {
     orderSubmit.disabled = true;
-    checkoutStatus.innerHTML = `로그인 후 주문할 수 있습니다. <a href="${shop.authUrl(settings, shop.pageUrl("checkout.html", settings))}">로그인 페이지로 이동</a>`;
+    checkoutStatus.innerHTML = `로그인 후 주문할 수 있습니다. <a href="${shop.authUrl(settings, shop.pageUrl("checkout.html", settings))}">로그인 페이지로 이동</a> 비회원 주문은 PG와 주문 조회 정책 확정 후 열 예정입니다.`;
+    paymentState.textContent = "회원 주문만 지원";
+    paymentCopy.textContent = "현재 테스트 단계에서는 회원 주문으로 장바구니, 주문 내역, 배송지를 연결합니다.";
     return;
   }
 
@@ -230,7 +232,15 @@ checkoutForm.addEventListener("submit", async (event) => {
 
   try {
     const formValues = Object.fromEntries(new FormData(checkoutForm));
+    if (formValues.saveProfileInfo && shop.updateProfile) {
+      await shop.updateProfile({
+        name: formValues.recipientName,
+        phone: formValues.phone,
+      });
+    }
     const order = await shop.createOrder(formValues);
+    const savedTargets = [];
+    if (formValues.saveProfileInfo) savedTargets.push("회원정보");
     if (formValues.saveAddress && shop.saveAddress) {
       await shop.saveAddress({
         label: "기본 배송지",
@@ -243,8 +253,9 @@ checkoutForm.addEventListener("submit", async (event) => {
         deliveryNote: formValues.deliveryNote,
         isDefault: true,
       });
+      savedTargets.push("기본 배송지");
     }
-    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.`;
+    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.${savedTargets.length ? ` ${savedTargets.join(", ")}도 저장했습니다.` : ""}`;
     paymentState.textContent = `주문 ${order.orderNumber} · 결제 전`;
     if (formValues.paymentProvider === "toss") {
       const started = await startTossPayment(order);

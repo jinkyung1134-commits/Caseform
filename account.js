@@ -108,6 +108,7 @@ function renderAccount() {
   if (member) {
     document.querySelector("#member-name").textContent = `${member.name}님`;
     document.querySelector("#member-role").textContent = roleLabel(member.role);
+    if (profileForm.elements.email) profileForm.elements.email.value = member.email || "";
     profileForm.elements.name.value = member.name || "";
     profileForm.elements.phone.value = member.phone || "";
   }
