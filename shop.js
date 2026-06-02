@@ -127,6 +127,31 @@
     return `${page}${query}`;
   }
 
+  function authUrl(settings, next = "account.html") {
+    return pageUrl("auth.html", settings || window.caseformActiveSettings, { next });
+  }
+
+  function accountUrl(settings) {
+    return pageUrl("account.html", settings || window.caseformActiveSettings);
+  }
+
+  function accountDestinationUrl(settings) {
+    return currentMember() ? accountUrl(settings) : authUrl(settings, accountUrl(settings));
+  }
+
+  function checkoutDestinationUrl(settings) {
+    return currentMember()
+      ? pageUrl("checkout.html", settings || window.caseformActiveSettings)
+      : authUrl(settings, pageUrl("checkout.html", settings || window.caseformActiveSettings));
+  }
+
+  function updateHeaderAccountLinks(settings) {
+    const target = accountDestinationUrl(settings);
+    document.querySelectorAll("[data-account-link], [data-account-icon]").forEach((link) => {
+      link.href = target;
+    });
+  }
+
   function isSupabaseEnabled() {
     return Boolean(client);
   }
@@ -671,6 +696,7 @@
       .filter((result) => result.status === "rejected")
       .forEach((result) => console.warn("VELTIER remote data could not be refreshed.", result.reason));
     renderCartDrawer(settings || window.caseformActiveSettings);
+    updateHeaderAccountLinks(settings || window.caseformActiveSettings);
     dispatchShopUpdate();
   }
 
@@ -743,7 +769,7 @@
       password: cleanPassword,
       options: {
         data: { name: cleanName, phone: cleanPhone },
-        emailRedirectTo: window.location.href,
+        emailRedirectTo: oauthRedirectUrl(),
       },
     });
 
@@ -804,6 +830,51 @@
       url.searchParams.delete(key);
     });
     return url.toString();
+  }
+
+  async function signInWithProvider(provider, options = {}) {
+    const cleanProvider = String(provider || "").trim().toLowerCase();
+    const labels = {
+      google: "Google",
+      apple: "Apple",
+      kakao: "Kakao",
+    };
+
+    if (!labels[cleanProvider]) throw new Error("지원하지 않는 로그인 방식입니다.");
+    if (!client) throw new Error(`${labels[cleanProvider]} 로그인은 Supabase 연결 후 사용할 수 있습니다.`);
+
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: cleanProvider,
+      options: {
+        redirectTo: options.redirectTo || oauthRedirectUrl(),
+        queryParams:
+          cleanProvider === "google"
+            ? {
+                prompt: "select_account",
+              }
+            : undefined,
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async function signInWithOtp({ email, redirectTo } = {}) {
+    const cleanEmail = normalizeEmail(email);
+    if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("이메일을 확인해주세요.");
+    if (!client) throw new Error("이메일 인증 로그인은 Supabase 연결 후 사용할 수 있습니다.");
+
+    const { data, error } = await client.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        emailRedirectTo: redirectTo || oauthRedirectUrl(),
+        shouldCreateUser: true,
+      },
+    });
+
+    if (error) throw error;
+    return data;
   }
 
   async function signInWithGoogle() {
@@ -1518,9 +1589,7 @@
         return;
       }
 
-      window.location.href = currentMember()
-        ? pageUrl("checkout.html", window.caseformActiveSettings)
-        : pageUrl("account.html", window.caseformActiveSettings);
+      window.location.href = checkoutDestinationUrl(window.caseformActiveSettings);
     });
 
     return drawer;
@@ -1580,21 +1649,19 @@
       renderCartDrawer(settings);
     });
 
-    document.querySelectorAll("[data-account-link], [data-account-icon]").forEach((link) => {
-      link.href = pageUrl("account.html", window.caseformActiveSettings || settings);
-    });
+    updateHeaderAccountLinks(window.caseformActiveSettings || settings);
 
     document.querySelectorAll(".mobile-icon-button.is-account").forEach((button) => {
       if (button.tagName === "A") {
         const member = currentMember();
         button.setAttribute("aria-label", member ? `${member.name} 마이페이지` : "마이페이지");
-        button.href = pageUrl("account.html", window.caseformActiveSettings || settings);
+        button.href = accountDestinationUrl(window.caseformActiveSettings || settings);
         return;
       }
       if (!button.dataset.accountBound) {
         button.dataset.accountBound = "true";
         button.addEventListener("click", () => {
-          window.location.href = pageUrl("account.html", window.caseformActiveSettings || settings);
+          window.location.href = accountDestinationUrl(window.caseformActiveSettings || settings);
         });
       }
       const member = currentMember();
@@ -1623,6 +1690,7 @@
   window.CaseformShop = {
     keys,
     pageUrl,
+    authUrl,
     formatWon,
     getDeviceOptions,
     isSupabaseEnabled,
@@ -1632,7 +1700,9 @@
     isAdmin,
     signUp,
     signIn,
+    signInWithProvider,
     signInWithGoogle,
+    signInWithOtp,
     signOut,
     updateProfile,
     getCart,

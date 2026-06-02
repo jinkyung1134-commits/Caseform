@@ -354,7 +354,7 @@ function updateReviewFormState() {
   fields.forEach((field) => {
     field.disabled = !canReview;
   });
-  reviewSubmit.disabled = !canReview;
+  reviewSubmit.disabled = member ? !canReview : false;
   reviewSubmit.textContent = !member ? "로그인 후 작성" : canReview ? "리뷰 등록" : "구매 후 작성";
   reviewMemberState.textContent = !member
     ? "마이페이지에서 로그인 후 작성 가능"
@@ -374,7 +374,7 @@ async function setupReviews() {
     event.preventDefault();
     const member = shop.currentMember();
     if (!member) {
-      window.location.href = shop.pageUrl("account.html", settings);
+      window.location.href = shop.authUrl(settings, `${shop.pageUrl("product.html", settings, { id: String(selectedIndex) })}#reviews`);
       return;
     }
 

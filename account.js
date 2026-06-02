@@ -17,6 +17,7 @@ const accountCartList = document.querySelector("#account-cart-list");
 const accountOrderList = document.querySelector("#account-order-list");
 const accountReviewList = document.querySelector("#account-review-list");
 const accountAddressList = document.querySelector("#account-address-list");
+const accountLoginLink = document.querySelector("#account-login-link");
 
 function productUrl(index) {
   return window.CaseformConfig.urlFor("product.html", settings, { id: String(index) });
@@ -86,6 +87,7 @@ async function applySettings() {
   document.querySelectorAll("[data-support-link]").forEach((link) => {
     link.href = policyUrl("#shipping");
   });
+  if (accountLoginLink) accountLoginLink.href = shop.authUrl(settings, shop.pageUrl("account.html", settings));
   shop.setupHeaderActions(settings);
   await shop.init(settings);
 }
@@ -99,7 +101,7 @@ async function hydrateProductSettings() {
 function renderAccount() {
   const member = shop.currentMember();
   document.body.classList.toggle("is-signed-in", Boolean(member));
-  authPanel.classList.toggle("is-hidden", Boolean(member));
+  if (authPanel) authPanel.classList.toggle("is-hidden", Boolean(member));
   profilePanel.classList.toggle("is-hidden", !member);
   if (googleAuthButton) googleAuthButton.hidden = Boolean(member) || !shop.isSupabaseEnabled();
 
@@ -275,6 +277,7 @@ function renderAddressSummary() {
 }
 
 function setAuthTab(tabName) {
+  if (!loginForm || !signupForm) return;
   document.querySelectorAll("[data-auth-tab]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.authTab === tabName);
   });
@@ -305,7 +308,7 @@ document.querySelectorAll("[data-auth-tab]").forEach((button) => {
   button.addEventListener("click", () => setAuthTab(button.dataset.authTab));
 });
 
-loginForm.addEventListener("submit", async (event) => {
+loginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   authStatus.textContent = "로그인 중입니다.";
   try {
@@ -318,7 +321,7 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
-signupForm.addEventListener("submit", async (event) => {
+signupForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   authStatus.textContent = "가입을 처리하고 있습니다.";
   try {
@@ -417,6 +420,12 @@ async function boot() {
 }
 
 boot().catch((error) => {
+  if (!authStatus) {
+    console.warn("VELTIER account could not be prepared.", error);
+    setupHeaderMenu();
+    renderAccount();
+    return;
+  }
   authStatus.textContent = error.message || "회원 기능을 불러오지 못했습니다.";
   setupHeaderMenu();
   renderAccount();

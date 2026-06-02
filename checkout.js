@@ -156,7 +156,7 @@ function fillMemberFields() {
   const member = shop.currentMember();
   if (!member) {
     orderSubmit.disabled = true;
-    checkoutStatus.innerHTML = `로그인 후 주문할 수 있습니다. <a href="${shop.pageUrl("account.html", settings)}">마이페이지로 이동</a>`;
+    checkoutStatus.innerHTML = `로그인 후 주문할 수 있습니다. <a href="${shop.authUrl(settings, shop.pageUrl("checkout.html", settings))}">로그인 페이지로 이동</a>`;
     return;
   }
 

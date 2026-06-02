@@ -2236,6 +2236,77 @@ legend,
   line-height: 1;
 }
 
+.auth-page-main {
+  min-height: 100svh;
+}
+
+.auth-shell {
+  grid-template-columns: minmax(300px, 0.9fr) minmax(280px, 0.7fr);
+}
+
+.auth-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.social-auth-grid,
+.auth-method-list {
+  display: grid;
+  gap: 10px;
+}
+
+.provider-mark {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid rgba(23, 20, 17, 0.16);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.provider-google {
+  color: #1a73e8;
+}
+
+.provider-apple {
+  color: #171411;
+}
+
+.provider-kakao {
+  border-color: rgba(23, 20, 17, 0.1);
+  background: #fee500;
+  color: #171411;
+}
+
+.auth-guide-panel {
+  align-self: start;
+}
+
+.auth-method-list article {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid rgba(23, 20, 17, 0.08);
+  border-radius: var(--radius);
+  background: #fbfaf7;
+}
+
+.auth-method-list strong {
+  color: #171411;
+}
+
+.auth-method-list span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.auth-forward-button {
+  width: fit-content;
+  margin-top: 16px;
+}
+
 .auth-divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -3527,7 +3598,8 @@ legend,
 body.home-page,
 body.catalog-page,
 body.product-page,
-body.account-page {
+body.account-page,
+body.auth-page {
   background: #ffffff;
   color: var(--ink);
 }
