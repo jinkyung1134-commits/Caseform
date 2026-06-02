@@ -235,10 +235,29 @@
     },
   ];
 
+  function defaultHeroSlides(sourceProducts = products) {
+    const heroProducts = sourceProducts
+      .map((product, index) => ({ product, index }))
+      .filter(({ product }) => product.showInHero)
+      .slice(0, 4);
+    const source = heroProducts.length
+      ? heroProducts
+      : sourceProducts.slice(0, 4).map((product, index) => ({ product, index }));
+
+    return source.map(({ product, index }, slideIndex) => ({
+      id: `hero-slide-${slideIndex + 1}`,
+      desktopImage: product.image || "assets/hero-cases.png",
+      mobileImage: product.image || "assets/hero-cases.png",
+      productIndex: index,
+      isActive: true,
+    }));
+  }
+
   const defaults = {
     brandName: "VELTIER",
     pageTitle: "VELTIER - 프리미엄 핸드폰 케이스",
     heroImage: "assets/hero-cases.png",
+    heroSlides: [],
     heroSlideInterval: 5,
     heroTransitionDuration: 650,
     heroMediaMode: "blend",
@@ -394,6 +413,31 @@
     };
   }
 
+  function mergeHeroSlides(baseSlides, savedSlides, sourceProducts) {
+    if (!Array.isArray(savedSlides) || !savedSlides.length) return [];
+
+    const productCount = Math.max((sourceProducts || []).length, 1);
+    const fallbackSlides = Array.isArray(baseSlides) && baseSlides.length
+      ? baseSlides
+      : defaultHeroSlides(sourceProducts);
+
+    return savedSlides.map((slide, index) => {
+      const currentSlide = slide || {};
+      const fallback = fallbackSlides[index] || fallbackSlides[0] || {};
+      const productIndex = clampRange(currentSlide.productIndex, fallback.productIndex || 0, 0, productCount - 1);
+      const desktopImage = mediaSource(currentSlide.desktopImage);
+      const mobileImage = mediaSource(currentSlide.mobileImage) || desktopImage;
+
+      return {
+        id: String(currentSlide.id || fallback.id || `hero-slide-${index + 1}`),
+        desktopImage,
+        mobileImage,
+        productIndex: Math.round(productIndex),
+        isActive: currentSlide.isActive === undefined ? fallback.isActive !== false : Boolean(currentSlide.isActive),
+      };
+    });
+  }
+
   function compactForUrl(settings) {
     const compact = clone(settings);
 
@@ -407,6 +451,13 @@
       if (/^data:/i.test(nextProduct.image || "")) delete nextProduct.image;
       if (/^data:/i.test(nextProduct.video || "")) delete nextProduct.video;
       return nextProduct;
+    });
+
+    compact.heroSlides = (compact.heroSlides || []).map((slide) => {
+      const nextSlide = { ...slide };
+      if (/^data:/i.test(nextSlide.desktopImage || "")) delete nextSlide.desktopImage;
+      if (/^data:/i.test(nextSlide.mobileImage || "")) delete nextSlide.mobileImage;
+      return nextSlide;
     });
 
     return compact;
@@ -472,6 +523,11 @@
     } else {
       merged.products = base.products.map((product) => mergeProduct(product));
     }
+    merged.heroSlides = mergeHeroSlides(
+      base.heroSlides || defaultHeroSlides(merged.products),
+      saved && saved.heroSlides,
+      merged.products,
+    );
     merged.heroSpecs =
       Array.isArray(saved && saved.heroSpecs) && saved.heroSpecs.length
         ? saved.heroSpecs

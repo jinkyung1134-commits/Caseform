@@ -38,11 +38,16 @@ const adminWorkspaceTitle = document.querySelector("#admin-workspace-title");
 const adminWorkspaceCopy = document.querySelector("#admin-workspace-copy");
 const adminCustomerList = document.querySelector("#admin-customer-list");
 const previewFrame = document.querySelector("#admin-preview-frame");
+const previewSlideImage = document.querySelector("#preview-slide-image");
+const previewSlideProduct = document.querySelector("#preview-slide-product");
+const previewSlideDevice = document.querySelector("#preview-slide-device");
 const previewModeButtons = [...document.querySelectorAll("[data-preview-mode]")];
 const uiDeviceTabButtons = [...document.querySelectorAll("[data-ui-device-tab]")];
 const uiDevicePanels = [...document.querySelectorAll("[data-ui-device-panel]")];
 const productAddButton = document.querySelector("#product-add-button");
 const productSaveDraftButton = document.querySelector("#product-save-draft-button");
+const heroSlideList = document.querySelector("#hero-slide-list");
+const heroSlideAddButton = document.querySelector("#hero-slide-add-button");
 const imagePreset = form.elements.heroImagePreset || null;
 const homeLinks = [...document.querySelectorAll('a[href="index.html"]')];
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
@@ -219,13 +224,13 @@ function setAdminAuthStatus(message, tone = "neutral") {
 }
 
 function updateAdminDashboard() {
-  const heroProducts = settings.products.filter((product) => product.showInHero);
+  const heroSlides = (settings.heroSlides || []).filter((slide) => slide.isActive !== false);
   const inventory = shop?.getInventory?.() || [];
   const lowStockItems = inventory.filter(
     (item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0),
   );
   if (adminProductCount) adminProductCount.textContent = String(settings.products.length);
-  if (adminHeroCount) adminHeroCount.textContent = String(heroProducts.length);
+  if (adminHeroCount) adminHeroCount.textContent = String(heroSlides.length);
   if (adminReviewMode) adminReviewMode.textContent = shop?.isSupabaseEnabled() ? "Supabase" : "Local";
   if (adminRoleName) adminRoleName.textContent = roleLabel(shop?.currentRole?.() || "admin");
   if (adminOrderCount) adminOrderCount.textContent = String(shop?.getOrders?.().length || 0);
@@ -845,6 +850,180 @@ function renderProductFields() {
     .join("");
 }
 
+function heroSlideImageForMode(slide, mode = "desktop") {
+  if (!slide) return "";
+  const desktopImage = mediaSource(slide.desktopImage);
+  const mobileImage = mediaSource(slide.mobileImage);
+  return mode === "mobile" ? mobileImage || desktopImage : desktopImage || mobileImage;
+}
+
+function heroSlideProductOptions(selectedIndex) {
+  return settings.products
+    .map((product, index) => {
+      const selected = Number(selectedIndex) === index ? " selected" : "";
+      return `<option value="${index}"${selected}>${index + 1}. ${escapeHtml(product.name)}</option>`;
+    })
+    .join("");
+}
+
+function createBlankHeroSlide() {
+  const heroProductIndex = settings.products.findIndex((product) => product.showInHero);
+  const productIndex = heroProductIndex >= 0 ? heroProductIndex : 0;
+
+  return {
+    id: `hero-slide-${Date.now()}`,
+    desktopImage: "",
+    mobileImage: "",
+    productIndex,
+    isActive: true,
+  };
+}
+
+function renderHeroSlideFields() {
+  if (!heroSlideList) return;
+
+  const slides = Array.isArray(settings.heroSlides) ? settings.heroSlides : [];
+  if (!slides.length) {
+    heroSlideList.innerHTML = `
+      <div class="hero-slide-empty">
+        <strong>등록된 메인 슬라이드가 없습니다.</strong>
+        <p>완성된 PC/모바일 배너 이미지를 준비한 뒤 슬라이드 추가를 눌러 연결 상품을 지정하세요.</p>
+      </div>
+    `;
+    return;
+  }
+
+  heroSlideList.innerHTML = slides
+    .map((slide, index) => {
+      const productIndex = Number(slide.productIndex) || 0;
+      const product = settings.products[productIndex] || settings.products[0] || {};
+      const thumbSource = heroSlideImageForMode(slide, "desktop");
+      const slideName = product.name || "연결 상품 없음";
+
+      return `
+        <fieldset class="hero-slide-card" data-hero-slide-card="${index}">
+          <legend>슬라이드 ${index + 1}</legend>
+          <div class="hero-slide-card-head">
+            <div class="hero-slide-thumb">
+              ${
+                thumbSource
+                  ? `<img src="${escapeHtml(thumbSource)}" alt="${escapeHtml(slideName)} 슬라이드 미리보기" />`
+                  : "<span>이미지 없음</span>"
+              }
+            </div>
+            <div>
+              <strong>${escapeHtml(slideName)}</strong>
+              <p>PC와 모바일에 각각 완성 이미지를 넣을 수 있습니다.</p>
+            </div>
+          </div>
+          <div class="hero-slide-fields">
+            <label>
+              <span>연결 상품</span>
+              <select name="hero-slide-${index}-productIndex">
+                ${heroSlideProductOptions(productIndex)}
+              </select>
+            </label>
+            <label class="admin-toggle">
+              <input name="hero-slide-${index}-isActive" type="checkbox"${slide.isActive !== false ? " checked" : ""} />
+              <span>메인에 표시</span>
+            </label>
+            <label class="wide-field">
+              <span>PC 이미지 경로</span>
+              <input name="hero-slide-${index}-desktopImage" type="text" value="${escapeHtml(slide.desktopImage)}" placeholder="assets/main-slide-desktop.jpg" />
+            </label>
+            <label>
+              <span>PC 이미지 업로드</span>
+              <input name="hero-slide-${index}-desktopFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,image/*" data-hero-slide-index="${index}" data-hero-slide-target="desktopImage" />
+            </label>
+            <label class="wide-field">
+              <span>모바일 이미지 경로</span>
+              <input name="hero-slide-${index}-mobileImage" type="text" value="${escapeHtml(slide.mobileImage)}" placeholder="assets/main-slide-mobile.jpg" />
+            </label>
+            <label>
+              <span>모바일 이미지 업로드</span>
+              <input name="hero-slide-${index}-mobileFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,image/*" data-hero-slide-index="${index}" data-hero-slide-target="mobileImage" />
+            </label>
+          </div>
+          <div class="hero-slide-actions">
+            <button class="button secondary" type="button" data-hero-slide-action="duplicate" data-hero-slide-index="${index}">복제</button>
+            <button class="button secondary" type="button" data-hero-slide-action="up" data-hero-slide-index="${index}">위로</button>
+            <button class="button secondary" type="button" data-hero-slide-action="down" data-hero-slide-index="${index}">아래로</button>
+            <button class="button secondary" type="button" data-hero-slide-action="delete" data-hero-slide-index="${index}">삭제</button>
+          </div>
+        </fieldset>
+      `;
+    })
+    .join("");
+}
+
+function collectHeroSlides() {
+  const slides = Array.isArray(settings.heroSlides) ? settings.heroSlides : [];
+  return slides.map((slide, index) => {
+    const productIndexField = form.elements[`hero-slide-${index}-productIndex`];
+    const desktopImageField = form.elements[`hero-slide-${index}-desktopImage`];
+    const mobileImageField = form.elements[`hero-slide-${index}-mobileImage`];
+    const activeField = form.elements[`hero-slide-${index}-isActive`];
+
+    const desktopImage = desktopImageField ? desktopImageField.value.trim() : slide.desktopImage || "";
+    const mobileImage = mobileImageField ? mobileImageField.value.trim() : slide.mobileImage || desktopImage;
+    const productIndex = productIndexField ? Number(productIndexField.value) : Number(slide.productIndex) || 0;
+
+    return {
+      id: slide.id || `hero-slide-${index + 1}`,
+      desktopImage,
+      mobileImage: mobileImage || desktopImage,
+      productIndex,
+      isActive: activeField ? activeField.checked : slide.isActive !== false,
+    };
+  });
+}
+
+function replaceHeroSlides(nextSlides, message) {
+  settings = window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, {
+    ...settings,
+    heroSlides: nextSlides,
+  });
+  window.CaseformConfig.save(settings);
+  populate();
+  statusText.textContent = message;
+}
+
+function handleHeroSlideAction(action, index) {
+  syncSettingsFromInputs();
+  const slides = [...(settings.heroSlides || [])];
+  const slide = slides[index];
+
+  if (action === "add") {
+    replaceHeroSlides([...slides, createBlankHeroSlide()], "메인 슬라이드가 추가되었습니다.");
+    return;
+  }
+
+  if (!slide) return;
+
+  if (action === "duplicate") {
+    slides.splice(index + 1, 0, { ...slide, id: `hero-slide-${Date.now()}`, isActive: true });
+    replaceHeroSlides(slides, "메인 슬라이드를 복제했습니다.");
+    return;
+  }
+
+  if (action === "delete") {
+    slides.splice(index, 1);
+    replaceHeroSlides(slides, "메인 슬라이드를 삭제했습니다.");
+    return;
+  }
+
+  if (action === "up" && index > 0) {
+    [slides[index - 1], slides[index]] = [slides[index], slides[index - 1]];
+    replaceHeroSlides(slides, "메인 슬라이드 순서를 변경했습니다.");
+    return;
+  }
+
+  if (action === "down" && index < slides.length - 1) {
+    [slides[index + 1], slides[index]] = [slides[index], slides[index + 1]];
+    replaceHeroSlides(slides, "메인 슬라이드 순서를 변경했습니다.");
+  }
+}
+
 function syncImagePreset() {
   if (!imagePreset) return;
   const options = [...imagePreset.options].map((option) => option.value);
@@ -852,9 +1031,10 @@ function syncImagePreset() {
 }
 
 function updatePreview() {
-  const accent = form.elements.accent.value;
-  const accentSoft = form.elements.accentSoft.value;
-  const accentWarm = form.elements.accentWarm.value;
+  const previewSettings = collectSettingsSafe();
+  const accent = previewSettings.colors?.accent || settings.colors.accent;
+  const accentSoft = previewSettings.colors?.accentSoft || settings.colors.accentSoft;
+  const accentWarm = previewSettings.colors?.accentWarm || settings.colors.accentWarm;
 
   document.documentElement.style.setProperty("--gold", accent);
   document.documentElement.style.setProperty("--accent", accent);
@@ -862,35 +1042,42 @@ function updatePreview() {
   document.documentElement.style.setProperty("--accent-dark", accentSoft);
   document.documentElement.style.setProperty("--gold-dark", accentWarm);
 
-  document.body.classList.toggle("gold-finish", form.elements.goldFinish.checked);
-  const previewSettings = collectSettingsSafe();
+  document.body.classList.toggle("gold-finish", Boolean(previewSettings.goldFinish));
   const previewMode = previewFrame?.dataset.previewMode === "mobile" ? "mobile" : "desktop";
-  const previewProfile = responsiveProfile(previewSettings, previewMode);
   applyHeroMediaVars(previewSettings);
+  const slides = Array.isArray(previewSettings.heroSlides) ? previewSettings.heroSlides : [];
+  const previewSlide =
+    slides.find((slide) => slide.isActive !== false && heroSlideImageForMode(slide, previewMode)) ||
+    slides.find((slide) => heroSlideImageForMode(slide, previewMode)) ||
+    null;
   const previewProduct =
-    previewSettings.products.find((product) => product.showInHero) || previewSettings.products[0];
-  const previewPhoto = document.querySelector("#preview-photo");
+    previewSlide && previewSettings.products[Number(previewSlide.productIndex)]
+      ? previewSettings.products[Number(previewSlide.productIndex)]
+      : previewSettings.products[0];
+  const previewImage = heroSlideImageForMode(previewSlide, previewMode);
+
   if (previewFrame) {
-    previewFrame.dataset.heroLayout = previewProfile.heroLayout;
-    previewFrame.dataset.heroTextAlign = previewProfile.heroTextAlign;
-    previewFrame.style.setProperty(
-      "--preview-media-scale",
-      (clampNumber(previewProfile.heroMediaScale, 100, 80, 150) / 100).toFixed(2),
-    );
+    previewFrame.classList.toggle("is-empty", !previewImage);
   }
-  document.querySelector("#preview-title-text").textContent = previewProduct.name;
-  document.querySelector("#preview-subtitle").textContent = previewProduct.description;
-  previewPhoto.dataset.mediaMode = previewSettings.heroMediaMode || "blend";
-  previewPhoto.classList.toggle("has-product-media", productHasMedia(previewProduct));
-  previewPhoto.innerHTML = `
-    ${previewMediaBackdropMarkup(previewProduct)}
-    <span></span>
-    ${productMediaMarkup(previewProduct, {
-      mediaClass: "product-media preview-product-media",
-      caseClass: "preview-product-case",
-    })}
-  `;
-  updateProductPreviews();
+
+  if (previewSlideImage) {
+    previewSlideImage.classList.toggle("has-image", Boolean(previewImage));
+    previewSlideImage.innerHTML = previewImage
+      ? `<img src="${escapeHtml(previewImage)}" alt="${escapeHtml(previewProduct?.name || "메인 슬라이드")}" />`
+      : "<span>슬라이드 이미지 없음</span>";
+  }
+
+  if (previewSlideProduct) {
+    previewSlideProduct.textContent = previewSlide
+      ? previewProduct?.name || "연결 상품 없음"
+      : "슬라이드를 추가하세요";
+  }
+
+  if (previewSlideDevice) {
+    previewSlideDevice.textContent = previewMode === "mobile" ? "모바일 미리보기" : "PC 미리보기";
+  }
+
+  updateProductPreviews(previewSettings);
 }
 
 function updateHomeLinks(sourceSettings = collectSettingsSafe()) {
@@ -942,6 +1129,7 @@ function populate() {
   setField("secondaryCta", settings.secondaryCta);
   setField("collectionTitle", settings.collectionTitle);
   renderProductFields();
+  renderHeroSlideFields();
   syncImagePreset();
   updatePreview();
   updateHomeLinks(settings);
@@ -1077,14 +1265,15 @@ function collectSettings() {
 
   return {
     ...settings,
-    brandName: form.elements.brandName.value.trim(),
-    pageTitle: form.elements.pageTitle.value.trim(),
+    brandName: form.elements.brandName?.value.trim() || settings.brandName,
+    pageTitle: form.elements.pageTitle?.value.trim() || settings.pageTitle,
     heroImage: form.elements.heroImage ? form.elements.heroImage.value.trim() : settings.heroImage,
-    goldFinish: form.elements.goldFinish.checked,
+    heroSlides: collectHeroSlides(),
+    goldFinish: form.elements.goldFinish ? form.elements.goldFinish.checked : settings.goldFinish,
     colors: {
-      accent: form.elements.accent.value,
-      accentSoft: form.elements.accentSoft.value,
-      accentWarm: form.elements.accentWarm.value,
+      accent: form.elements.accent?.value || settings.colors.accent,
+      accentSoft: form.elements.accentSoft?.value || settings.colors.accentSoft,
+      accentWarm: form.elements.accentWarm?.value || settings.colors.accentWarm,
     },
     integrations: {
       googleMapsApiKey: form.elements.googleMapsApiKey?.value.trim() || "",
@@ -1102,7 +1291,7 @@ function collectSettings() {
       ? form.elements.heroSubtitle.value.trim()
       : settings.heroSubtitle,
     heroSpecs,
-    heroSlideInterval: Number(form.elements.heroSlideInterval.value) || settings.heroSlideInterval,
+    heroSlideInterval: Number(form.elements.heroSlideInterval?.value) || settings.heroSlideInterval,
     heroTransitionDuration: form.elements.heroTransitionDuration
       ? Number(form.elements.heroTransitionDuration.value)
       : settings.heroTransitionDuration,
@@ -1113,10 +1302,10 @@ function collectSettings() {
     heroMediaFade: form.elements.heroMediaFade
       ? Number(form.elements.heroMediaFade.value)
       : settings.heroMediaFade,
-    primaryCta: form.elements.primaryCta.value.trim(),
-    secondaryCta: form.elements.secondaryCta.value.trim(),
+    primaryCta: form.elements.primaryCta?.value.trim() || settings.primaryCta,
+    secondaryCta: form.elements.secondaryCta?.value.trim() || settings.secondaryCta,
     priceNote: settings.priceNote,
-    collectionTitle: form.elements.collectionTitle.value.trim(),
+    collectionTitle: form.elements.collectionTitle?.value.trim() || settings.collectionTitle,
     products: collectProducts(),
   };
 }
@@ -1184,6 +1373,7 @@ function saveMediaDraft() {
   try {
     window.CaseformConfig.save(draft);
     settings = draft;
+    renderHeroSlideFields();
     updateHomeLinks(draft);
     updateProductPreviews(draft);
     updateAdminDashboard();
@@ -1236,6 +1426,49 @@ function readProductFile(input) {
 
   reader.addEventListener("error", () => {
     statusText.textContent = "파일 읽기 실패";
+  });
+
+  reader.readAsDataURL(file);
+}
+
+function readHeroSlideFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  const index = Number(input.dataset.heroSlideIndex);
+  const target = input.dataset.heroSlideTarget === "mobileImage" ? "mobileImage" : "desktopImage";
+  const targetField = form.elements[`hero-slide-${index}-${target}`];
+  const productIndex = Number(form.elements[`hero-slide-${index}-productIndex`]?.value) || 0;
+  const reader = new FileReader();
+
+  if (!targetField) return;
+  statusText.textContent = "슬라이드 이미지를 읽는 중입니다.";
+
+  reader.addEventListener("load", async () => {
+    try {
+      if (shop?.isSupabaseEnabled() && shop.isAdmin()) {
+        statusText.textContent = "슬라이드 이미지를 업로드하는 중입니다.";
+        targetField.value = await shop.uploadProductMedia(file, {
+          productIndex,
+          mediaKind: "hero-slide",
+        });
+      } else {
+        const normalized = normalizeDataUrl(file, reader.result, "image");
+        targetField.value = await optimizeImageDataUrl(file, normalized);
+      }
+
+      updatePreview();
+      saveMediaDraft();
+    } catch (error) {
+      const normalized = normalizeDataUrl(file, reader.result, "image");
+      targetField.value = await optimizeImageDataUrl(file, normalized);
+      updatePreview();
+      statusText.textContent = error.message || "슬라이드 이미지 업로드에 실패했습니다.";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    statusText.textContent = "슬라이드 이미지 파일을 읽지 못했습니다.";
   });
 
   reader.readAsDataURL(file);
@@ -1334,6 +1567,29 @@ productHost.addEventListener("click", (event) => {
   if (!actionButton) return;
   handleProductAction(actionButton.dataset.productAction, Number(actionButton.dataset.productIndex));
 });
+
+if (heroSlideAddButton) {
+  heroSlideAddButton.addEventListener("click", () => handleHeroSlideAction("add", -1));
+}
+
+if (heroSlideList) {
+  heroSlideList.addEventListener("change", (event) => {
+    if (event.target.matches('input[type="file"][data-hero-slide-index]')) {
+      readHeroSlideFile(event.target);
+      return;
+    }
+
+    statusText.textContent = "수정 중";
+    updatePreview();
+    updateHomeLinks();
+  });
+
+  heroSlideList.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-hero-slide-action]");
+    if (!actionButton) return;
+    handleHeroSlideAction(actionButton.dataset.heroSlideAction, Number(actionButton.dataset.heroSlideIndex));
+  });
+}
 
 if (productAddButton) {
   productAddButton.addEventListener("click", () => {

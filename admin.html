@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20260602-auth-flow" />
-    <link rel="stylesheet" href="admin.css?v=20260602-responsive-ui" />
+    <link rel="stylesheet" href="styles.css?v=20260603-hero-slides" />
+    <link rel="stylesheet" href="admin.css?v=20260603-hero-slides" />
   </head>
   <body class="admin-body">
     <header class="admin-header">
@@ -157,7 +157,7 @@
                   </article>
                   <article>
                     <strong>3. 사이트 UI 확인</strong>
-                    <p>메인 화면 문구와 상품 노출 분위기를 미리보기로 맞춥니다.</p>
+                    <p>완성된 메인 슬라이드 이미지와 연결 상품을 미리보기로 확인합니다.</p>
                   </article>
                 </div>
               </section>
@@ -283,163 +283,27 @@
               <section class="admin-view" data-admin-panel="ui" hidden>
                 <div class="site-ui-grid">
                   <div class="site-ui-controls">
-                    <div class="ui-device-tabs" role="tablist" aria-label="화면 버전 설정">
-                      <button class="is-active" type="button" role="tab" aria-selected="true" data-ui-device-tab="desktop">PC 설정</button>
-                      <button type="button" role="tab" aria-selected="false" data-ui-device-tab="mobile">모바일 설정</button>
-                    </div>
-
-                    <section class="admin-panel ui-device-panel is-active" data-ui-device-panel="desktop" aria-labelledby="desktop-ui-panel">
+                    <section class="admin-panel hero-slide-manager" aria-labelledby="hero-panel">
                       <div class="panel-heading">
-                        <h2 id="desktop-ui-panel">PC 화면 설계</h2>
-                        <span>Desktop</span>
+                        <h2 id="hero-panel">메인 슬라이드 관리</h2>
+                        <span>완성 이미지</span>
                       </div>
-                      <label>
-                        <span>히어로 배치</span>
-                        <select name="desktopHeroLayout">
-                          <option value="split">좌측 문구 / 우측 이미지</option>
-                          <option value="focus">상품 이미지 더 크게</option>
-                          <option value="center">중앙 문구 / 배경 이미지</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>문구 정렬</span>
-                        <select name="desktopHeroTextAlign">
-                          <option value="left">왼쪽 정렬</option>
-                          <option value="center">중앙 정렬</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>상품 이미지 크기</span>
-                        <input name="desktopHeroMediaScale" type="range" min="80" max="130" step="1" />
-                      </label>
-                      <label>
-                        <span>홈 상품 노출 수</span>
-                        <input name="desktopProductPreviewCount" type="number" min="4" max="12" step="1" />
-                      </label>
-                    </section>
-
-                    <section class="admin-panel ui-device-panel" data-ui-device-panel="mobile" aria-labelledby="mobile-ui-panel" hidden>
-                      <div class="panel-heading">
-                        <h2 id="mobile-ui-panel">모바일 화면 설계</h2>
-                        <span>Mobile</span>
-                      </div>
-                      <label>
-                        <span>히어로 배치</span>
-                        <select name="mobileHeroLayout">
-                          <option value="immersive">풀스크린 브랜드형</option>
-                          <option value="compact">짧은 첫 화면</option>
-                          <option value="poster">제품 포스터형</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>문구 정렬</span>
-                        <select name="mobileHeroTextAlign">
-                          <option value="center">중앙 정렬</option>
-                          <option value="left">왼쪽 정렬</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>상품 이미지 크기</span>
-                        <input name="mobileHeroMediaScale" type="range" min="90" max="140" step="1" />
-                      </label>
-                      <label>
-                        <span>홈 상품 노출 수</span>
-                        <input name="mobileProductPreviewCount" type="number" min="2" max="10" step="1" />
-                      </label>
-                    </section>
-
-                    <section class="admin-panel" aria-labelledby="hero-panel">
-                      <div class="panel-heading">
-                        <h2 id="hero-panel">공통 첫 화면</h2>
-                        <span>상품 슬라이드</span>
-                      </div>
-                      <label>
-                        <span>히어로 제목</span>
-                        <input name="heroTitle" type="text" />
-                      </label>
-                      <label>
-                        <span>히어로 설명</span>
-                        <textarea name="heroSubtitle" rows="3"></textarea>
-                      </label>
-                      <label>
-                        <span>스펙 문구</span>
-                        <input name="heroSpecs" type="text" placeholder="Aero matte, MagSafe, Slim profile" />
-                      </label>
-                      <label>
-                        <span>대표 배경 이미지</span>
-                        <input name="heroImage" type="text" placeholder="assets/..." />
-                      </label>
-                      <label>
-                        <span>상품 슬라이드 전환(초)</span>
-                        <input name="heroSlideInterval" type="number" min="2" max="30" step="1" />
-                      </label>
-                      <label>
-                        <span>전환 효과 시간(ms)</span>
-                        <input name="heroTransitionDuration" type="number" min="150" max="1800" step="50" />
-                      </label>
-                      <label>
-                        <span>사진 표시 방식</span>
-                        <select name="heroMediaMode">
-                          <option value="blend">배경 블렌딩</option>
-                          <option value="fill">전체 사진 채우기</option>
-                          <option value="focus">제품 중심</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>배경 어둡기</span>
-                        <input name="heroMediaDarkness" type="range" min="0" max="90" step="1" />
-                      </label>
-                      <label>
-                        <span>가장자리 페이드</span>
-                        <input name="heroMediaFade" type="range" min="0" max="100" step="1" />
-                      </label>
-                    </section>
-
-                    <section class="admin-panel" aria-labelledby="theme-panel">
-                      <div class="panel-heading">
-                        <h2 id="theme-panel">화면 마감</h2>
-                        <span>색상과 경계</span>
-                      </div>
-                      <label class="admin-toggle">
-                        <input name="goldFinish" type="checkbox" />
-                        <span>사진 경계 골드 마감선</span>
-                      </label>
-                      <div class="color-grid">
+                      <p class="admin-helper">
+                        문구와 연출이 포함된 완성 이미지를 올리고, 클릭 시 이동할 상품을 연결합니다.
+                        상품은 먼저 상품 관리에서 등록해두는 것이 좋습니다.
+                      </p>
+                      <div class="admin-toolbar hero-slide-timing">
                         <label>
-                          <span>골드</span>
-                          <input name="accent" type="color" />
+                          <span>슬라이드 유지 시간(초)</span>
+                          <input name="heroSlideInterval" type="number" min="2" max="30" step="1" />
                         </label>
                         <label>
-                          <span>하이라이트</span>
-                          <input name="accentSoft" type="color" />
+                          <span>전환 속도(ms)</span>
+                          <input name="heroTransitionDuration" type="number" min="150" max="1800" step="50" />
                         </label>
-                        <label>
-                          <span>딥 골드</span>
-                          <input name="accentWarm" type="color" />
-                        </label>
+                        <button class="button primary" id="hero-slide-add-button" type="button">슬라이드 추가</button>
                       </div>
-                      <div class="finish-preview" aria-hidden="true">
-                        <span></span>
-                      </div>
-                    </section>
-
-                    <section class="admin-panel" aria-labelledby="copy-panel">
-                      <div class="panel-heading">
-                        <h2 id="copy-panel">버튼과 섹션</h2>
-                        <span>문구</span>
-                      </div>
-                      <label>
-                        <span>메인 버튼</span>
-                        <input name="primaryCta" type="text" />
-                      </label>
-                      <label>
-                        <span>보조 버튼</span>
-                        <input name="secondaryCta" type="text" />
-                      </label>
-                      <label>
-                        <span>컬렉션 제목</span>
-                        <textarea name="collectionTitle" rows="2"></textarea>
-                      </label>
+                      <div class="hero-slide-list" id="hero-slide-list"></div>
                     </section>
                   </div>
 
@@ -453,12 +317,12 @@
                       <button type="button" data-preview-mode="mobile">Mobile</button>
                     </div>
                     <div class="preview-frame" id="admin-preview-frame" data-preview-mode="desktop">
-                      <div class="preview-copy">
-                        <strong id="preview-title-text">케이스는 보호구가 아니라 세팅입니다.</strong>
-                        <small id="preview-subtitle">무광 블랙과 사진 경계의 골드 마감선.</small>
+                      <div class="preview-slide-image" id="preview-slide-image">
+                        <span>슬라이드 이미지</span>
                       </div>
-                      <div class="preview-photo" id="preview-photo">
-                        <span></span>
+                      <div class="preview-slide-meta">
+                        <strong id="preview-slide-product">연결 상품</strong>
+                        <small id="preview-slide-device">PC 미리보기</small>
                       </div>
                     </div>
                     <div class="admin-actions">
@@ -513,11 +377,11 @@
       </div>
     </main>
 
-    <script src="site-config.js?v=20260602-responsive-ui"></script>
+    <script src="site-config.js?v=20260603-hero-slides"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="payments-config.js?v=20260602-commerce-launch"></script>
     <script src="shop.js?v=20260602-auth-flow"></script>
-    <script src="admin.js?v=20260602-responsive-ui"></script>
+    <script src="admin.js?v=20260603-hero-slides"></script>
   </body>
 </html>

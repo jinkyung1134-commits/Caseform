@@ -40,12 +40,43 @@ function productsUrl() {
   return window.CaseformConfig.urlFor("products.html", settings);
 }
 
-function heroSlideItems() {
+function productHeroSlideItems() {
   const selected = products
     .map((product, index) => ({ product, index }))
     .filter(({ product }) => product.showInHero);
 
   return selected.length ? selected : products.map((product, index) => ({ product, index }));
+}
+
+function campaignHeroSlideItems() {
+  const screenKey = activeScreenKey();
+  const slides = Array.isArray(settings.heroSlides) ? settings.heroSlides : [];
+
+  return slides
+    .filter((slide) => slide && slide.isActive !== false)
+    .map((slide, fallbackIndex) => {
+      const productIndex = Number.isFinite(Number(slide.productIndex))
+        ? Number(slide.productIndex)
+        : fallbackIndex;
+      const product = products[productIndex] || products[0];
+      const desktopImage = mediaSource(slide.desktopImage);
+      const mobileImage = mediaSource(slide.mobileImage);
+      const image = screenKey === "mobile" ? mobileImage || desktopImage : desktopImage || mobileImage;
+
+      return {
+        type: "campaign",
+        slide,
+        product,
+        index: products[productIndex] ? productIndex : 0,
+        image,
+      };
+    })
+    .filter((item) => item.product && item.image);
+}
+
+function heroSlideItems() {
+  const campaignSlides = campaignHeroSlideItems();
+  return campaignSlides.length ? campaignSlides : productHeroSlideItems();
 }
 
 function clampNumber(value, fallback, min, max) {
@@ -194,15 +225,19 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
     heroMediaLink.href = productsUrl();
     heroMediaLink.dataset.mediaMode = "static";
     heroMediaLink.classList.remove("has-product-media");
+    heroMediaLink.classList.remove("is-campaign-media");
     heroMediaLink.classList.add("is-static-hero");
     heroMediaLink.innerHTML = staticHeroMediaMarkup();
     heroPreload.href = whiteHeroImage;
+    hero.classList.remove("is-campaign-hero");
     hero.classList.remove("is-switching");
     return;
   }
 
   activeHeroSlide = ((nextIndex % slides.length) + slides.length) % slides.length;
-  const { product, index } = slides[activeHeroSlide];
+  const item = slides[activeHeroSlide];
+  const { product, index } = item;
+  const isCampaignSlide = item.type === "campaign";
   const detailUrl = productUrl(index);
   const swapDelay = immediate ? 0 : Math.round(heroTransitionMs() * 0.45);
 
@@ -222,16 +257,22 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
       heroCopyLink.setAttribute("aria-label", `${product.name} 상세페이지로 이동`);
       if (heroMobileProductLink) {
         heroMobileProductLink.href = detailUrl;
+        heroMobileProductLink.textContent = "상품 보기";
         heroMobileProductLink.setAttribute("aria-label", `${product.name} 상품 보기`);
       }
       heroMediaLink.href = detailUrl;
-      heroMediaLink.dataset.mediaMode = settings.heroMediaMode || "blend";
+      heroMediaLink.dataset.mediaMode = isCampaignSlide ? "campaign" : settings.heroMediaMode || "blend";
       heroMediaLink.classList.remove("is-static-hero");
-      heroMediaLink.classList.toggle("has-product-media", productHasMedia(product));
-      heroMediaLink.innerHTML = heroMediaContentMarkup(product);
+      heroMediaLink.classList.toggle("is-campaign-media", isCampaignSlide);
+      heroMediaLink.classList.toggle("has-product-media", !isCampaignSlide && productHasMedia(product));
+      heroMediaLink.innerHTML = isCampaignSlide
+        ? `<img class="hero-campaign-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(product.name)} 메인 슬라이드" loading="eager" />`
+        : heroMediaContentMarkup(product);
+      hero.classList.toggle("is-campaign-hero", isCampaignSlide);
 
       const productImage = mediaSource(product.image);
-      heroPreload.href = productImage && !productImage.startsWith("data:") ? productImage : settings.heroImage;
+      const preloadImage = isCampaignSlide ? item.image : productImage;
+      heroPreload.href = preloadImage && !preloadImage.startsWith("data:") ? preloadImage : settings.heroImage;
       window.requestAnimationFrame(() => {
         hero.classList.remove("is-switching");
       });
