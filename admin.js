@@ -32,6 +32,13 @@ const emailTemplateList = document.querySelector("#email-template-list");
 const opsChecklist = document.querySelector("#ops-checklist");
 const opsStatus = document.querySelector("#ops-status");
 const adminExportButton = document.querySelector("#admin-export-button");
+const adminMenuButtons = [...document.querySelectorAll("[data-admin-view]")];
+const adminPanels = [...document.querySelectorAll("[data-admin-panel]")];
+const adminWorkspaceTitle = document.querySelector("#admin-workspace-title");
+const adminWorkspaceCopy = document.querySelector("#admin-workspace-copy");
+const adminCustomerList = document.querySelector("#admin-customer-list");
+const previewFrame = document.querySelector("#admin-preview-frame");
+const previewModeButtons = [...document.querySelectorAll("[data-preview-mode]")];
 const productAddButton = document.querySelector("#product-add-button");
 const productSaveDraftButton = document.querySelector("#product-save-draft-button");
 const imagePreset = form.elements.heroImagePreset || null;
@@ -101,6 +108,89 @@ function roleLabel(role) {
     guest: "비로그인",
   };
   return labels[role] || role || "확인 전";
+}
+
+const adminViewMeta = {
+  dashboard: {
+    title: "대시보드",
+    copy: "오늘 확인할 주문, 상품, 재고, 권한 상태를 한 번에 봅니다.",
+  },
+  orders: {
+    title: "주문 관리",
+    copy: "주문 상태, 결제 상태, 송장 정보를 운영 단계별로 관리합니다.",
+  },
+  products: {
+    title: "상품 관리",
+    copy: "상품명, 가격, 이미지, 상세 미디어를 수정하고 메인 노출 여부를 정합니다.",
+  },
+  inventory: {
+    title: "재고 관리",
+    copy: "핸드폰 기종별 SKU와 재고 수량, 품절 여부를 관리합니다.",
+  },
+  customers: {
+    title: "고객 관리",
+    copy: "회원과 구매 고객 정보를 주문 데이터 기준으로 빠르게 확인합니다.",
+  },
+  reviews: {
+    title: "리뷰 관리",
+    copy: "구매자가 남긴 리뷰를 확인하고 필요할 때 숨기거나 삭제합니다.",
+  },
+  email: {
+    title: "알림 관리",
+    copy: "주문, 배송, 리뷰 요청에 필요한 이메일 대기열과 템플릿을 확인합니다.",
+  },
+  ui: {
+    title: "사이트 UI 관리",
+    copy: "첫 화면 문구, 색상, 이미지 표시 방식을 바꾸면서 실시간으로 분위기를 확인합니다.",
+  },
+  settings: {
+    title: "사이트 설정",
+    copy: "브랜드명, 도메인, 지도 API, 결제 공개 키처럼 사이트 운영에 필요한 값을 관리합니다.",
+  },
+  operations: {
+    title: "운영 점검",
+    copy: "판매 전 확인해야 할 보안, 결제, 백업 상태를 점검합니다.",
+  },
+};
+
+function initialAdminView() {
+  const hashView = window.location.hash.replace("#", "");
+  return adminViewMeta[hashView] ? hashView : "dashboard";
+}
+
+function setAdminView(view, options = {}) {
+  const nextView = adminViewMeta[view] ? view : "dashboard";
+  const meta = adminViewMeta[nextView];
+
+  adminMenuButtons.forEach((button) => {
+    const isActive = button.dataset.adminView === nextView;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  adminPanels.forEach((panel) => {
+    const isActive = panel.dataset.adminPanel === nextView;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+
+  if (adminWorkspaceTitle) adminWorkspaceTitle.textContent = meta.title;
+  if (adminWorkspaceCopy) adminWorkspaceCopy.textContent = meta.copy;
+
+  if (options.updateHash !== false && window.location.hash !== `#${nextView}`) {
+    history.replaceState(null, "", `#${nextView}`);
+  }
+}
+
+function setPreviewMode(mode) {
+  if (!previewFrame) return;
+  const nextMode = mode === "mobile" ? "mobile" : "desktop";
+  previewFrame.dataset.previewMode = nextMode;
+  previewModeButtons.forEach((button) => {
+    const isActive = button.dataset.previewMode === nextMode;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
 }
 
 function setAdminAuthStatus(message, tone = "neutral") {
@@ -465,11 +555,55 @@ function downloadOperationalBackup() {
   if (opsStatus) opsStatus.textContent = "운영 데이터 파일을 생성했습니다.";
 }
 
+function renderCustomers() {
+  if (!adminCustomerList || !shop?.getOrders) return;
+
+  const customers = new Map();
+  shop.getOrders().forEach((order) => {
+    const key = order.email || order.phone || order.recipientName || order.id;
+    const previous = customers.get(key) || {
+      name: order.recipientName || "이름 없음",
+      email: order.email || "이메일 없음",
+      phone: order.phone || "연락처 없음",
+      total: 0,
+      orderCount: 0,
+      lastOrderAt: order.createdAt,
+    };
+
+    previous.total += Number(order.total || 0);
+    previous.orderCount += 1;
+    previous.lastOrderAt =
+      new Date(order.createdAt) > new Date(previous.lastOrderAt) ? order.createdAt : previous.lastOrderAt;
+    customers.set(key, previous);
+  });
+
+  const rows = [...customers.values()].sort((a, b) => new Date(b.lastOrderAt) - new Date(a.lastOrderAt));
+
+  if (!rows.length) {
+    adminCustomerList.innerHTML = `<div class="admin-empty">아직 주문 고객 데이터가 없습니다.</div>`;
+    return;
+  }
+
+  adminCustomerList.innerHTML = rows
+    .slice(0, 20)
+    .map(
+      (customer) => `
+        <article class="customer-card">
+          <strong>${escapeHtml(customer.name)}</strong>
+          <span>${escapeHtml(customer.email)} · ${escapeHtml(customer.phone)}</span>
+          <p>주문 ${customer.orderCount}건 · 누적 ${shop.formatWon(customer.total)} · 최근 ${new Date(customer.lastOrderAt).toLocaleDateString("ko-KR")}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
 function renderOperationPanels() {
   renderAdminOrders();
   renderInventorySelector();
   renderInventoryGrid();
   renderLowStockList();
+  renderCustomers();
   renderAdminReviews();
   renderNotifications();
   renderEmailTemplates();
@@ -1044,7 +1178,21 @@ function readProductFile(input) {
   reader.readAsDataURL(file);
 }
 
+setAdminView(initialAdminView(), { updateHash: false });
+setPreviewMode(previewFrame?.dataset.previewMode || "desktop");
 bootAdmin();
+
+adminMenuButtons.forEach((button) => {
+  button.addEventListener("click", () => setAdminView(button.dataset.adminView));
+});
+
+previewModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setPreviewMode(button.dataset.previewMode));
+});
+
+window.addEventListener("hashchange", () => {
+  setAdminView(initialAdminView(), { updateHash: false });
+});
 
 adminLoginForm.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -6,7 +6,7 @@
     <title>VELTIER Admin</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css?v=20260602-commerce-launch" />
-    <link rel="stylesheet" href="admin.css?v=20260602-prelaunch" />
+    <link rel="stylesheet" href="admin.css?v=20260602-admin-console" />
   </head>
   <body class="admin-body">
     <header class="admin-header">
@@ -52,263 +52,399 @@
       </section>
 
       <div class="admin-app is-hidden" id="admin-app">
-        <section class="admin-title">
-          <p class="eyebrow">Admin Console</p>
-          <h1>운영 콘솔</h1>
-          <p>고객 계정과 관리자 계정을 분리하고, 상품·리뷰·주문 관리로 확장할 수 있는 기본 구조입니다.</p>
-        </section>
-
-        <section class="admin-dashboard" aria-label="관리자 요약">
-          <article>
-            <span>상품</span>
-            <strong id="admin-product-count">0</strong>
-          </article>
-          <article>
-            <span>메인 노출</span>
-            <strong id="admin-hero-count">0</strong>
-          </article>
-          <article>
-            <span>리뷰 저장소</span>
-            <strong id="admin-review-mode">-</strong>
-          </article>
-          <article>
-            <span>현재 권한</span>
-            <strong id="admin-role-name">-</strong>
-          </article>
-          <article>
-            <span>주문</span>
-            <strong id="admin-order-count">0</strong>
-          </article>
-          <article>
-            <span>재고 주의</span>
-            <strong id="admin-low-stock-count">0</strong>
-          </article>
-        </section>
-
-        <section class="admin-panel orders-panel" aria-labelledby="orders-panel">
-          <div class="panel-heading">
-            <h2 id="orders-panel">주문 관리</h2>
-            <span>상태와 결제</span>
-          </div>
-          <div class="admin-toolbar">
-            <label>
-              <span>주문 상태</span>
-              <select id="admin-order-filter">
-                <option value="all">전체 주문</option>
-                <option value="pending_payment">결제 대기</option>
-                <option value="paid">결제 완료</option>
-                <option value="preparing">상품 준비</option>
-                <option value="shipped">배송 중</option>
-                <option value="delivered">배송 완료</option>
-                <option value="cancelled">취소</option>
-              </select>
-            </label>
-            <button class="button secondary" id="admin-refresh-orders" type="button">새로고침</button>
-          </div>
-          <div class="admin-orders" id="admin-orders"></div>
-        </section>
-
-        <section class="admin-panel inventory-panel" aria-labelledby="inventory-panel">
-          <div class="panel-heading">
-            <h2 id="inventory-panel">기종별 재고</h2>
-            <span>상품 옵션</span>
-          </div>
-          <div class="admin-toolbar">
-            <label>
-              <span>상품 선택</span>
-              <select id="inventory-product-select"></select>
-            </label>
-            <button class="button secondary" id="inventory-seed-button" type="button">기본 재고 채우기</button>
-            <button class="button primary" id="inventory-save-button" type="button">재고 저장</button>
-          </div>
-          <div class="inventory-grid" id="inventory-grid"></div>
-          <div class="admin-sublist" id="low-stock-list"></div>
-          <p class="admin-helper" id="inventory-status" aria-live="polite"></p>
-        </section>
-
-        <section class="admin-panel review-admin-panel" aria-labelledby="review-admin-panel">
-          <div class="panel-heading">
-            <h2 id="review-admin-panel">리뷰 관리</h2>
-            <span>구매자 리뷰</span>
-          </div>
-          <div class="admin-sublist" id="admin-review-list"></div>
-        </section>
-
-        <section class="admin-panel notification-panel" aria-labelledby="notification-panel">
-          <div class="panel-heading">
-            <h2 id="notification-panel">이메일 알림 대기열</h2>
-            <span>발송 준비</span>
-          </div>
-          <div class="notification-list" id="notification-list"></div>
-          <div class="admin-actions">
-            <button class="button secondary" id="notification-send-button" type="button">자동 발송 시도</button>
-          </div>
-          <p class="admin-helper">실제 발송은 다음 단계에서 Supabase Edge Function 또는 이메일 서비스 키를 연결하면 자동화할 수 있습니다.</p>
-        </section>
-
-        <section class="admin-panel template-panel" aria-labelledby="template-panel">
-          <div class="panel-heading">
-            <h2 id="template-panel">이메일 템플릿</h2>
-            <span>복사 준비</span>
-          </div>
-          <div class="email-template-list" id="email-template-list"></div>
-        </section>
-
-        <section class="admin-panel operations-panel" aria-labelledby="operations-panel">
-          <div class="panel-heading">
-            <h2 id="operations-panel">운영 점검</h2>
-            <span>보안과 백업</span>
-          </div>
-          <div class="ops-checklist" id="ops-checklist"></div>
-          <div class="admin-actions">
-            <button class="button secondary" id="admin-export-button" type="button">운영 데이터 내보내기</button>
-          </div>
-          <p class="admin-helper" id="ops-status" aria-live="polite"></p>
-        </section>
-
-        <form class="admin-layout" id="settings-form">
-          <section class="admin-panel" aria-labelledby="brand-panel">
-            <div class="panel-heading">
-              <h2 id="brand-panel">브랜드</h2>
-              <span>기본 정보</span>
+        <div class="admin-console">
+          <aside class="admin-sidebar" aria-label="관리자 섹션 메뉴">
+            <div class="admin-sidebar-brand">
+              <p class="eyebrow">Admin Console</p>
+              <strong>VELTIER</strong>
+              <span>운영 관리</span>
             </div>
-            <label>
-              <span>브랜드명</span>
-              <input name="brandName" type="text" />
-            </label>
-            <label>
-              <span>브라우저 제목</span>
-              <input name="pageTitle" type="text" />
-            </label>
-            <label class="wide-field">
-              <span>Google Maps API 키</span>
-              <input name="googleMapsApiKey" type="text" placeholder="해외 주소 자동완성용 공개 키" autocomplete="off" />
-            </label>
-            <label class="wide-field">
-              <span>Toss Client Key</span>
-              <input name="tossClientKey" type="text" placeholder="test_ck_..." autocomplete="off" />
-            </label>
-            <label>
-              <span>고객센터 이메일</span>
-              <input name="supportEmail" type="email" placeholder="support@veltier.co" />
-            </label>
-            <label>
-              <span>도메인 후보</span>
-              <input name="customDomain" type="text" placeholder="veltier.co" />
-            </label>
-            <p class="admin-helper wide-field">Google Cloud에서 HTTP 리퍼러 제한을 걸어둔 브라우저용 키만 입력하세요.</p>
-          </section>
-
-          <section class="admin-panel" aria-labelledby="hero-panel">
-            <div class="panel-heading">
-              <h2 id="hero-panel">첫 화면</h2>
-              <span>상품 슬라이드</span>
+            <div class="admin-section-menu" role="tablist" aria-label="관리자 화면">
+              <button class="is-active" type="button" role="tab" aria-selected="true" data-admin-view="dashboard">
+                대시보드
+                <span>운영 요약</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="orders">
+                주문 관리
+                <span>결제와 배송</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="products">
+                상품 관리
+                <span>상품/미디어</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="inventory">
+                재고 관리
+                <span>기종별 옵션</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="customers">
+                고객 관리
+                <span>회원/구매자</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="reviews">
+                리뷰 관리
+                <span>구매자 리뷰</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="email">
+                알림 관리
+                <span>이메일 대기열</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="ui">
+                사이트 UI 관리
+                <span>실시간 미리보기</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="settings">
+                사이트 설정
+                <span>연동/브랜드</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" data-admin-view="operations">
+                운영 점검
+                <span>보안/백업</span>
+              </button>
             </div>
-            <label>
-              <span>상품 슬라이드 전환(초)</span>
-              <input name="heroSlideInterval" type="number" min="2" max="30" step="1" />
-            </label>
-            <label>
-              <span>전환 효과 시간(ms)</span>
-              <input name="heroTransitionDuration" type="number" min="150" max="1800" step="50" />
-            </label>
-            <label>
-              <span>사진 표시 방식</span>
-              <select name="heroMediaMode">
-                <option value="blend">배경 블렌딩</option>
-                <option value="fill">전체 사진 채우기</option>
-                <option value="focus">제품 중심</option>
-              </select>
-            </label>
-            <label>
-              <span>배경 어둡기</span>
-              <input name="heroMediaDarkness" type="range" min="0" max="90" step="1" />
-            </label>
-            <label>
-              <span>가장자리 페이드</span>
-              <input name="heroMediaFade" type="range" min="0" max="100" step="1" />
-            </label>
-          </section>
-
-          <section class="admin-panel" aria-labelledby="theme-panel">
-            <div class="panel-heading">
-              <h2 id="theme-panel">화면 마감</h2>
-              <span>색상과 경계</span>
-            </div>
-            <label class="admin-toggle">
-              <input name="goldFinish" type="checkbox" />
-              <span>사진 경계 골드 마감선</span>
-            </label>
-            <div class="color-grid">
-              <label>
-                <span>골드</span>
-                <input name="accent" type="color" />
-              </label>
-              <label>
-                <span>하이라이트</span>
-                <input name="accentSoft" type="color" />
-              </label>
-              <label>
-                <span>딥 골드</span>
-                <input name="accentWarm" type="color" />
-              </label>
-            </div>
-            <div class="finish-preview" aria-hidden="true">
-              <span></span>
-            </div>
-          </section>
-
-          <section class="admin-panel" aria-labelledby="copy-panel">
-            <div class="panel-heading">
-              <h2 id="copy-panel">버튼과 섹션</h2>
-              <span>문구</span>
-            </div>
-            <label>
-              <span>메인 버튼</span>
-              <input name="primaryCta" type="text" />
-            </label>
-            <label>
-              <span>보조 버튼</span>
-              <input name="secondaryCta" type="text" />
-            </label>
-            <label>
-              <span>컬렉션 제목</span>
-              <textarea name="collectionTitle" rows="2"></textarea>
-            </label>
-          </section>
-
-          <section class="admin-panel products-panel" aria-labelledby="products-panel">
-            <div class="panel-heading">
-              <h2 id="products-panel">상품</h2>
-              <span>미디어와 상세</span>
-            </div>
-            <div class="admin-toolbar">
-              <button class="button secondary" id="product-add-button" type="button">상품 추가</button>
-              <button class="button secondary" id="product-save-draft-button" type="button">현재 입력 임시 저장</button>
-            </div>
-            <div class="admin-products" id="admin-products"></div>
-          </section>
-
-          <aside class="admin-preview" aria-labelledby="preview-title">
-            <div class="panel-heading">
-              <h2 id="preview-title">미리보기</h2>
-              <span id="save-status">저장 전</span>
-            </div>
-            <div class="preview-frame">
-              <div class="preview-copy">
-                <strong id="preview-title-text">케이스는 보호구가 아니라 세팅입니다.</strong>
-                <small id="preview-subtitle">무광 블랙과 사진 경계의 골드 마감선.</small>
-              </div>
-              <div class="preview-photo" id="preview-photo">
-                <span></span>
-              </div>
-            </div>
-            <div class="admin-actions">
-              <button class="button primary" type="submit">설정 저장</button>
-              <button class="button secondary" id="reset-button" type="button">초기화</button>
+            <div class="admin-sidebar-actions">
+              <a class="button secondary" href="index.html">홈페이지 보기</a>
+              <button class="button primary" type="submit" form="settings-form">전체 저장</button>
             </div>
           </aside>
-        </form>
+
+          <section class="admin-workspace">
+            <section class="admin-workspace-head" aria-live="polite">
+              <p class="eyebrow">Admin</p>
+              <h1 id="admin-workspace-title">대시보드</h1>
+              <p id="admin-workspace-copy">오늘 확인할 주문, 상품, 재고, 권한 상태를 한 번에 봅니다.</p>
+            </section>
+
+            <section class="admin-view is-active" data-admin-panel="dashboard">
+              <section class="admin-dashboard" aria-label="관리자 요약">
+                <article>
+                  <span>상품</span>
+                  <strong id="admin-product-count">0</strong>
+                </article>
+                <article>
+                  <span>메인 노출</span>
+                  <strong id="admin-hero-count">0</strong>
+                </article>
+                <article>
+                  <span>리뷰 저장소</span>
+                  <strong id="admin-review-mode">-</strong>
+                </article>
+                <article>
+                  <span>현재 권한</span>
+                  <strong id="admin-role-name">-</strong>
+                </article>
+                <article>
+                  <span>주문</span>
+                  <strong id="admin-order-count">0</strong>
+                </article>
+                <article>
+                  <span>재고 주의</span>
+                  <strong id="admin-low-stock-count">0</strong>
+                </article>
+              </section>
+              <section class="admin-panel">
+                <div class="panel-heading">
+                  <h2>운영 흐름</h2>
+                  <span>Today</span>
+                </div>
+                <div class="admin-flow-grid">
+                  <article>
+                    <strong>1. 주문 확인</strong>
+                    <p>결제 대기와 결제 완료 주문을 먼저 확인합니다.</p>
+                  </article>
+                  <article>
+                    <strong>2. 재고 확인</strong>
+                    <p>품절이나 저재고 기종을 확인하고 판매 가능 상태를 조정합니다.</p>
+                  </article>
+                  <article>
+                    <strong>3. 사이트 UI 확인</strong>
+                    <p>메인 화면 문구와 상품 노출 분위기를 미리보기로 맞춥니다.</p>
+                  </article>
+                </div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="orders" hidden>
+              <section class="admin-panel orders-panel" aria-labelledby="orders-panel">
+                <div class="panel-heading">
+                  <h2 id="orders-panel">주문 관리</h2>
+                  <span>상태와 결제</span>
+                </div>
+                <div class="admin-toolbar">
+                  <label>
+                    <span>주문 상태</span>
+                    <select id="admin-order-filter">
+                      <option value="all">전체 주문</option>
+                      <option value="pending_payment">결제 대기</option>
+                      <option value="paid">결제 완료</option>
+                      <option value="preparing">상품 준비</option>
+                      <option value="shipped">배송 중</option>
+                      <option value="delivered">배송 완료</option>
+                      <option value="cancelled">취소</option>
+                    </select>
+                  </label>
+                  <button class="button secondary" id="admin-refresh-orders" type="button">새로고침</button>
+                </div>
+                <div class="admin-orders" id="admin-orders"></div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="inventory" hidden>
+              <section class="admin-panel inventory-panel" aria-labelledby="inventory-panel">
+                <div class="panel-heading">
+                  <h2 id="inventory-panel">기종별 재고</h2>
+                  <span>상품 옵션</span>
+                </div>
+                <div class="admin-toolbar">
+                  <label>
+                    <span>상품 선택</span>
+                    <select id="inventory-product-select"></select>
+                  </label>
+                  <button class="button secondary" id="inventory-seed-button" type="button">기본 재고 채우기</button>
+                  <button class="button primary" id="inventory-save-button" type="button">재고 저장</button>
+                </div>
+                <div class="inventory-grid" id="inventory-grid"></div>
+                <div class="admin-sublist" id="low-stock-list"></div>
+                <p class="admin-helper" id="inventory-status" aria-live="polite"></p>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="customers" hidden>
+              <section class="admin-panel customer-panel" aria-labelledby="customer-panel">
+                <div class="panel-heading">
+                  <h2 id="customer-panel">고객 관리</h2>
+                  <span>회원과 구매자</span>
+                </div>
+                <div class="admin-sublist" id="admin-customer-list"></div>
+                <p class="admin-helper">정식 CRM은 다음 단계에서 확장하고, 지금은 주문 데이터 기준으로 고객 정보를 정리합니다.</p>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="reviews" hidden>
+              <section class="admin-panel review-admin-panel" aria-labelledby="review-admin-panel">
+                <div class="panel-heading">
+                  <h2 id="review-admin-panel">리뷰 관리</h2>
+                  <span>구매자 리뷰</span>
+                </div>
+                <div class="admin-sublist" id="admin-review-list"></div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="email" hidden>
+              <section class="admin-panel notification-panel" aria-labelledby="notification-panel">
+                <div class="panel-heading">
+                  <h2 id="notification-panel">이메일 알림 대기열</h2>
+                  <span>발송 준비</span>
+                </div>
+                <div class="notification-list" id="notification-list"></div>
+                <div class="admin-actions">
+                  <button class="button secondary" id="notification-send-button" type="button">자동 발송 시도</button>
+                </div>
+                <p class="admin-helper">실제 발송은 Supabase Edge Function과 이메일 서비스 키를 연결하면 자동화됩니다.</p>
+              </section>
+
+              <section class="admin-panel template-panel" aria-labelledby="template-panel">
+                <div class="panel-heading">
+                  <h2 id="template-panel">이메일 템플릿</h2>
+                  <span>복사 준비</span>
+                </div>
+                <div class="email-template-list" id="email-template-list"></div>
+              </section>
+            </section>
+
+            <section class="admin-view" data-admin-panel="operations" hidden>
+              <section class="admin-panel operations-panel" aria-labelledby="operations-panel">
+                <div class="panel-heading">
+                  <h2 id="operations-panel">운영 점검</h2>
+                  <span>보안과 백업</span>
+                </div>
+                <div class="ops-checklist" id="ops-checklist"></div>
+                <div class="admin-actions">
+                  <button class="button secondary" id="admin-export-button" type="button">운영 데이터 내보내기</button>
+                </div>
+                <p class="admin-helper" id="ops-status" aria-live="polite"></p>
+              </section>
+            </section>
+
+            <form class="admin-settings-form" id="settings-form">
+              <section class="admin-view" data-admin-panel="products" hidden>
+                <section class="admin-panel products-panel" aria-labelledby="products-panel">
+                  <div class="panel-heading">
+                    <h2 id="products-panel">상품</h2>
+                    <span>미디어와 상세</span>
+                  </div>
+                  <div class="admin-toolbar">
+                    <button class="button secondary" id="product-add-button" type="button">상품 추가</button>
+                    <button class="button secondary" id="product-save-draft-button" type="button">현재 입력 임시 저장</button>
+                  </div>
+                  <div class="admin-products" id="admin-products"></div>
+                </section>
+              </section>
+
+              <section class="admin-view" data-admin-panel="ui" hidden>
+                <div class="site-ui-grid">
+                  <div class="site-ui-controls">
+                    <section class="admin-panel" aria-labelledby="hero-panel">
+                      <div class="panel-heading">
+                        <h2 id="hero-panel">첫 화면</h2>
+                        <span>상품 슬라이드</span>
+                      </div>
+                      <label>
+                        <span>히어로 제목</span>
+                        <input name="heroTitle" type="text" />
+                      </label>
+                      <label>
+                        <span>히어로 설명</span>
+                        <textarea name="heroSubtitle" rows="3"></textarea>
+                      </label>
+                      <label>
+                        <span>스펙 문구</span>
+                        <input name="heroSpecs" type="text" placeholder="Aero matte, MagSafe, Slim profile" />
+                      </label>
+                      <label>
+                        <span>대표 배경 이미지</span>
+                        <input name="heroImage" type="text" placeholder="assets/..." />
+                      </label>
+                      <label>
+                        <span>상품 슬라이드 전환(초)</span>
+                        <input name="heroSlideInterval" type="number" min="2" max="30" step="1" />
+                      </label>
+                      <label>
+                        <span>전환 효과 시간(ms)</span>
+                        <input name="heroTransitionDuration" type="number" min="150" max="1800" step="50" />
+                      </label>
+                      <label>
+                        <span>사진 표시 방식</span>
+                        <select name="heroMediaMode">
+                          <option value="blend">배경 블렌딩</option>
+                          <option value="fill">전체 사진 채우기</option>
+                          <option value="focus">제품 중심</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>배경 어둡기</span>
+                        <input name="heroMediaDarkness" type="range" min="0" max="90" step="1" />
+                      </label>
+                      <label>
+                        <span>가장자리 페이드</span>
+                        <input name="heroMediaFade" type="range" min="0" max="100" step="1" />
+                      </label>
+                    </section>
+
+                    <section class="admin-panel" aria-labelledby="theme-panel">
+                      <div class="panel-heading">
+                        <h2 id="theme-panel">화면 마감</h2>
+                        <span>색상과 경계</span>
+                      </div>
+                      <label class="admin-toggle">
+                        <input name="goldFinish" type="checkbox" />
+                        <span>사진 경계 골드 마감선</span>
+                      </label>
+                      <div class="color-grid">
+                        <label>
+                          <span>골드</span>
+                          <input name="accent" type="color" />
+                        </label>
+                        <label>
+                          <span>하이라이트</span>
+                          <input name="accentSoft" type="color" />
+                        </label>
+                        <label>
+                          <span>딥 골드</span>
+                          <input name="accentWarm" type="color" />
+                        </label>
+                      </div>
+                      <div class="finish-preview" aria-hidden="true">
+                        <span></span>
+                      </div>
+                    </section>
+
+                    <section class="admin-panel" aria-labelledby="copy-panel">
+                      <div class="panel-heading">
+                        <h2 id="copy-panel">버튼과 섹션</h2>
+                        <span>문구</span>
+                      </div>
+                      <label>
+                        <span>메인 버튼</span>
+                        <input name="primaryCta" type="text" />
+                      </label>
+                      <label>
+                        <span>보조 버튼</span>
+                        <input name="secondaryCta" type="text" />
+                      </label>
+                      <label>
+                        <span>컬렉션 제목</span>
+                        <textarea name="collectionTitle" rows="2"></textarea>
+                      </label>
+                    </section>
+                  </div>
+
+                  <aside class="admin-preview" aria-labelledby="preview-title">
+                    <div class="panel-heading">
+                      <h2 id="preview-title">실시간 미리보기</h2>
+                      <span id="save-status">저장 전</span>
+                    </div>
+                    <div class="preview-tools" role="group" aria-label="미리보기 화면 크기">
+                      <button class="is-active" type="button" data-preview-mode="desktop">PC</button>
+                      <button type="button" data-preview-mode="mobile">Mobile</button>
+                    </div>
+                    <div class="preview-frame" id="admin-preview-frame" data-preview-mode="desktop">
+                      <div class="preview-copy">
+                        <strong id="preview-title-text">케이스는 보호구가 아니라 세팅입니다.</strong>
+                        <small id="preview-subtitle">무광 블랙과 사진 경계의 골드 마감선.</small>
+                      </div>
+                      <div class="preview-photo" id="preview-photo">
+                        <span></span>
+                      </div>
+                    </div>
+                    <div class="admin-actions">
+                      <button class="button primary" type="submit">설정 저장</button>
+                      <button class="button secondary" id="reset-button" type="button">초기화</button>
+                    </div>
+                  </aside>
+                </div>
+              </section>
+
+              <section class="admin-view" data-admin-panel="settings" hidden>
+                <section class="admin-panel" aria-labelledby="brand-panel">
+                  <div class="panel-heading">
+                    <h2 id="brand-panel">브랜드와 연동</h2>
+                    <span>기본 정보</span>
+                  </div>
+                  <div class="settings-grid">
+                    <label>
+                      <span>브랜드명</span>
+                      <input name="brandName" type="text" />
+                    </label>
+                    <label>
+                      <span>브라우저 제목</span>
+                      <input name="pageTitle" type="text" />
+                    </label>
+                    <label>
+                      <span>고객센터 이메일</span>
+                      <input name="supportEmail" type="email" placeholder="support@veltier.co" />
+                    </label>
+                    <label>
+                      <span>도메인 후보</span>
+                      <input name="customDomain" type="text" placeholder="veltier.co" />
+                    </label>
+                    <label class="wide-field">
+                      <span>Google Maps API 키</span>
+                      <input name="googleMapsApiKey" type="text" placeholder="해외 주소 자동완성용 공개 키" autocomplete="off" />
+                    </label>
+                    <label class="wide-field">
+                      <span>Toss Client Key</span>
+                      <input name="tossClientKey" type="text" placeholder="test_ck_..." autocomplete="off" />
+                    </label>
+                  </div>
+                  <p class="admin-helper">브라우저에서 쓰는 공개 키만 입력하고, 비밀 키는 Supabase Edge Function 환경 변수로 관리하세요.</p>
+                  <div class="admin-actions">
+                    <button class="button primary" type="submit">설정 저장</button>
+                  </div>
+                </section>
+              </section>
+            </form>
+          </section>
+        </div>
       </div>
     </main>
 
@@ -317,6 +453,6 @@
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="payments-config.js?v=20260602-commerce-launch"></script>
     <script src="shop.js?v=20260602-commerce-launch"></script>
-    <script src="admin.js?v=20260602-commerce-launch"></script>
+    <script src="admin.js?v=20260602-admin-console"></script>
   </body>
 </html>
