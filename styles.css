@@ -2164,6 +2164,81 @@ legend,
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.account-overview,
+.account-section-tabs,
+.account-section-panel {
+  grid-column: 1 / -1;
+}
+
+.account-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-stat-card {
+  display: grid;
+  gap: 8px;
+  min-height: 124px;
+  padding: 16px;
+  border: 1px solid rgba(23, 20, 17, 0.1);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 12px 34px rgba(23, 20, 17, 0.07);
+  cursor: pointer;
+}
+
+.account-stat-card:hover {
+  border-color: rgba(184, 137, 47, 0.34);
+  background: #fbfaf6;
+}
+
+.account-stat-card span,
+.account-stat-card small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.account-stat-card span {
+  text-transform: uppercase;
+}
+
+.account-stat-card strong {
+  color: #171411;
+  font-size: 34px;
+  line-height: 0.95;
+}
+
+.account-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(184, 137, 47, 0.2);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+
+.account-section-tabs button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.account-section-tabs button.is-active {
+  background: #171411;
+  color: #ffffff;
+}
+
 .account-panel,
 .review-form,
 .review-card {
@@ -2704,6 +2779,51 @@ legend,
   line-height: 1.45;
 }
 
+.account-order-head,
+.account-order-meta,
+.account-inline-actions,
+.account-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-order-head {
+  justify-content: space-between;
+}
+
+.account-order-meta small {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6f6a62;
+  font-weight: 900;
+}
+
+.account-status-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 50%);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #fbf7ec;
+  color: var(--gold-dark);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.account-list-actions {
+  justify-content: flex-end;
+}
+
+.account-empty-action {
+  width: fit-content;
+  margin-top: 12px;
+}
+
 .account-order-item a {
   color: var(--gold-dark);
   font-weight: 900;
@@ -3149,6 +3269,11 @@ legend,
   .account-dashboard,
   .reviews-layout {
     grid-template-columns: 1fr;
+  }
+
+  .account-overview,
+  .account-section-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .auth-page-main {
@@ -4135,6 +4260,19 @@ body.auth-page {
 
   .account-hero h1 {
     font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .account-overview {
+    gap: 10px;
+  }
+
+  .account-stat-card {
+    min-height: 112px;
+    padding: 14px;
+  }
+
+  .account-section-tabs button {
+    min-height: 42px;
   }
 
   .checkout-main {

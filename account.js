@@ -13,11 +13,25 @@ const authStatus = document.querySelector("#auth-status");
 const profileStatus = document.querySelector("#profile-status");
 const addressForm = document.querySelector("#address-form");
 const addressStatus = document.querySelector("#address-status");
+const addressNewButton = document.querySelector("[data-address-new]");
+const accountDashboard = document.querySelector("#account-dashboard");
+const accountSectionTabs = [...document.querySelectorAll("[data-account-section]")];
+const accountSectionPanels = [...document.querySelectorAll("[data-account-panel]")];
+const accountSectionJumps = [...document.querySelectorAll("[data-account-section-jump]")];
+const accountOrderCount = document.querySelector("#account-order-count");
+const accountAddressCount = document.querySelector("#account-address-count");
+const accountCartCount = document.querySelector("#account-cart-count");
+const accountReviewCount = document.querySelector("#account-review-count");
 const accountCartList = document.querySelector("#account-cart-list");
 const accountOrderList = document.querySelector("#account-order-list");
 const accountReviewList = document.querySelector("#account-review-list");
 const accountAddressList = document.querySelector("#account-address-list");
 const accountLoginLink = document.querySelector("#account-login-link");
+const accountSections = ["orders", "addresses", "cart", "reviews"];
+let activeAccountSection = accountSections.includes(new URLSearchParams(window.location.search).get("section"))
+  ? new URLSearchParams(window.location.search).get("section")
+  : "orders";
+let accountRedirectQueued = false;
 
 function productUrl(index) {
   return window.CaseformConfig.urlFor("product.html", settings, { id: String(index) });
@@ -29,6 +43,10 @@ function indexUrl(hash = "") {
 
 function productsUrl() {
   return window.CaseformConfig.urlFor("products.html", settings);
+}
+
+function checkoutUrl() {
+  return window.CaseformConfig.urlFor("checkout.html", settings);
 }
 
 function policyUrl(hash = "") {
@@ -66,6 +84,52 @@ function roleLabel(role) {
   return labels[role] || "고객 계정";
 }
 
+function accountSectionUrl(section) {
+  const url = new URL(shop.pageUrl("account.html", settings), window.location.href);
+  url.searchParams.set("section", section);
+  return url.href;
+}
+
+function setAccountSection(section = "orders", { replaceUrl = false } = {}) {
+  activeAccountSection = accountSections.includes(section) ? section : "orders";
+  accountSectionTabs.forEach((button) => {
+    const isActive = button.dataset.accountSection === activeAccountSection;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+  accountSectionPanels.forEach((panel) => {
+    panel.classList.toggle("is-hidden", panel.dataset.accountPanel !== activeAccountSection);
+  });
+
+  const url = accountSectionUrl(activeAccountSection);
+  if (replaceUrl) {
+    window.history.replaceState({}, "", url);
+  }
+}
+
+function setMetric(node, count) {
+  if (node) node.textContent = String(count);
+}
+
+function renderAccountOverview() {
+  const member = shop.currentMember();
+  const cart = shop.getCart();
+  const orders = member && shop.getOrders ? shop.getOrders() : [];
+  const addresses = member && shop.getAddresses ? shop.getAddresses() : [];
+  const reviews = member ? shop.getMemberReviews(member.email) : [];
+
+  setMetric(accountOrderCount, orders.length);
+  setMetric(accountAddressCount, addresses.length);
+  setMetric(accountCartCount, cart.reduce((total, item) => total + Number(item.quantity || 0), 0));
+  setMetric(accountReviewCount, reviews.length);
+}
+
+function redirectToAuthIfNeeded(member) {
+  if (member || accountRedirectQueued) return;
+  accountRedirectQueued = true;
+  window.location.replace(shop.authUrl(settings, accountSectionUrl(activeAccountSection)));
+}
+
 async function applySettings() {
   const root = document.documentElement;
   root.style.setProperty("--accent", settings.colors.accent);
@@ -87,7 +151,7 @@ async function applySettings() {
   document.querySelectorAll("[data-support-link]").forEach((link) => {
     link.href = policyUrl("#shipping");
   });
-  if (accountLoginLink) accountLoginLink.href = shop.authUrl(settings, shop.pageUrl("account.html", settings));
+  if (accountLoginLink) accountLoginLink.href = shop.authUrl(settings, accountSectionUrl(activeAccountSection));
   shop.setupHeaderActions(settings);
   await shop.init(settings);
 }
@@ -103,6 +167,7 @@ function renderAccount() {
   document.body.classList.toggle("is-signed-in", Boolean(member));
   if (authPanel) authPanel.classList.toggle("is-hidden", Boolean(member));
   profilePanel.classList.toggle("is-hidden", !member);
+  accountDashboard?.classList.toggle("is-hidden", !member);
   if (googleAuthButton) googleAuthButton.hidden = Boolean(member) || !shop.isSupabaseEnabled();
 
   if (member) {
@@ -113,11 +178,14 @@ function renderAccount() {
     profileForm.elements.phone.value = member.phone || "";
   }
 
+  renderAccountOverview();
   renderCartSummary();
   renderOrderSummary();
   renderAddressSummary();
   renderReviewSummary();
+  setAccountSection(activeAccountSection);
   shop.setupHeaderActions(settings);
+  redirectToAuthIfNeeded(member);
 }
 
 function renderCartSummary() {
@@ -137,7 +205,12 @@ function renderCartSummary() {
         </a>
       `;
     })
-    .join("");
+    .join("") +
+    `
+      <div class="account-list-actions">
+        <a class="button primary" href="${checkoutUrl()}">주문서로 이동</a>
+      </div>
+    `;
 }
 
 function orderStatusLabel(status) {
@@ -173,7 +246,12 @@ function renderOrderSummary() {
 
   const orders = shop.getOrders ? shop.getOrders() : [];
   if (!orders.length) {
-    accountOrderList.innerHTML = `<div class="account-empty">아직 주문 내역이 없습니다.</div>`;
+    accountOrderList.innerHTML = `
+      <div class="account-empty">
+        아직 주문 내역이 없습니다.
+        <a class="button secondary account-empty-action" href="${productsUrl()}">컬렉션 둘러보기</a>
+      </div>
+    `;
     return;
   }
 
@@ -181,15 +259,22 @@ function renderOrderSummary() {
     .map(
       (order) => `
         <div class="account-list-item account-order-item">
-          <strong>${escapeHtml(order.orderNumber)} · ${orderStatusLabel(order.status)}</strong>
-          <span>${new Date(order.createdAt).toLocaleDateString("ko-KR")} · ${shop.formatWon(order.total)} · ${paymentStatusLabel(order.paymentStatus)}</span>
+          <div class="account-order-head">
+            <strong>${escapeHtml(order.orderNumber)}</strong>
+            <span class="account-status-badge">${orderStatusLabel(order.status)}</span>
+          </div>
+          <span>${new Date(order.createdAt).toLocaleDateString("ko-KR")} · ${shop.formatWon(order.total)}</span>
+          <div class="account-order-meta">
+            <small>${paymentStatusLabel(order.paymentStatus)}</small>
+            <small>${order.paymentProvider ? escapeHtml(order.paymentProvider) : "manual"}</small>
+          </div>
           <small>${(order.items || [])
             .map((item) => `${escapeHtml(item.productName)} / ${escapeHtml(item.device)} ${Number(item.quantity || 1)}개`)
             .join(" · ")}</small>
           ${
             order.trackingNumber
               ? `<small>송장번호 ${escapeHtml(order.trackingNumber)}${order.trackingUrl ? ` · <a href="${escapeHtml(order.trackingUrl)}" target="_blank" rel="noopener">배송조회</a>` : ""}</small>`
-              : `<small>배송 준비 전입니다.</small>`
+              : `<small>결제 확인 후 배송 정보가 표시됩니다.</small>`
           }
         </div>
       `,
@@ -206,7 +291,12 @@ function renderReviewSummary() {
 
   const reviews = shop.getMemberReviews(member.email);
   if (!reviews.length) {
-    accountReviewList.innerHTML = `<div class="account-empty">아직 작성한 리뷰가 없습니다.</div>`;
+    accountReviewList.innerHTML = `
+      <div class="account-empty">
+        아직 작성한 리뷰가 없습니다.
+        <a class="button secondary account-empty-action" href="${productsUrl()}">상품 보러가기</a>
+      </div>
+    `;
     return;
   }
 
@@ -255,7 +345,7 @@ function renderAddressSummary() {
   }
 
   if (!addresses.length) {
-    accountAddressList.innerHTML = `<div class="account-empty">저장된 배송지가 없습니다.</div>`;
+    accountAddressList.innerHTML = `<div class="account-empty">저장된 배송지가 없습니다. 자주 쓰는 주소를 기본 배송지로 저장해두세요.</div>`;
     return;
   }
 
@@ -307,6 +397,14 @@ function setupHeaderMenu() {
 
 document.querySelectorAll("[data-auth-tab]").forEach((button) => {
   button.addEventListener("click", () => setAuthTab(button.dataset.authTab));
+});
+
+accountSectionTabs.forEach((button) => {
+  button.addEventListener("click", () => setAccountSection(button.dataset.accountSection, { replaceUrl: true }));
+});
+
+accountSectionJumps.forEach((button) => {
+  button.addEventListener("click", () => setAccountSection(button.dataset.accountSectionJump, { replaceUrl: true }));
 });
 
 loginForm?.addEventListener("submit", async (event) => {
@@ -376,6 +474,11 @@ if (addressForm) {
     }
   });
 }
+
+addressNewButton?.addEventListener("click", () => {
+  fillAddressForm();
+  addressStatus.textContent = "새 배송지를 입력한 뒤 저장하세요.";
+});
 
 if (accountAddressList) {
   accountAddressList.addEventListener("click", async (event) => {

@@ -26,6 +26,12 @@ function productsUrl() {
   return window.CaseformConfig.urlFor("products.html", settings);
 }
 
+function accountSectionUrl(section = "orders") {
+  const url = new URL(shop.pageUrl("account.html", settings), window.location.href);
+  url.searchParams.set("section", section);
+  return url.href;
+}
+
 function policyUrl(hash = "") {
   return `${window.CaseformConfig.urlFor("policies.html", settings)}${hash}`;
 }
@@ -81,7 +87,10 @@ async function startTossPayment(order) {
   if (!clientKey) {
     paymentState.textContent = "Toss 테스트 키 필요";
     paymentCopy.textContent = "payments-config.js 또는 관리자 설정에 Toss Client Key를 넣으면 테스트 결제창이 열립니다.";
-    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.`;
+    checkoutStatus.innerHTML = `
+      주문 ${escapeHtml(order.orderNumber)}이 결제 전 상태로 생성되었습니다.
+      <a href="${accountSectionUrl("orders")}">주문 내역 보기</a>
+    `;
     return false;
   }
 
@@ -255,7 +264,11 @@ checkoutForm.addEventListener("submit", async (event) => {
       });
       savedTargets.push("기본 배송지");
     }
-    checkoutStatus.textContent = `주문 ${order.orderNumber}이 결제 전 상태로 생성되었습니다.${savedTargets.length ? ` ${savedTargets.join(", ")}도 저장했습니다.` : ""}`;
+    const savedCopy = savedTargets.length ? ` ${savedTargets.join(", ")}도 저장했습니다.` : "";
+    checkoutStatus.innerHTML = `
+      주문 ${escapeHtml(order.orderNumber)}이 결제 전 상태로 생성되었습니다.${escapeHtml(savedCopy)}
+      <a href="${accountSectionUrl("orders")}">주문 내역 보기</a>
+    `;
     paymentState.textContent = `주문 ${order.orderNumber} · 결제 전`;
     if (formValues.paymentProvider === "toss") {
       const started = await startTossPayment(order);
