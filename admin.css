@@ -516,6 +516,11 @@
   font-size: 12px;
 }
 
+.button.danger {
+  border-color: rgba(156, 48, 48, 0.28);
+  color: #9c3030;
+}
+
 .ops-check {
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -655,6 +660,24 @@
   padding: 18px;
   color: var(--muted);
   background: #ffffff;
+}
+
+.product-admin-empty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  text-align: center;
+}
+
+.product-admin-empty strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.product-admin-empty p {
+  max-width: 420px;
+  margin: 0;
+  line-height: 1.55;
 }
 
 .admin-layout {

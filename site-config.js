@@ -235,7 +235,44 @@
     },
   ];
 
-  function defaultHeroSlides(sourceProducts = products) {
+  function blankProduct() {
+    return {
+      name: "",
+      material: "",
+      color: "#f3eadb",
+      price: 0,
+      mediaType: "image",
+      image: "",
+      video: "",
+      showInHero: false,
+      isActive: true,
+      description: "",
+    };
+  }
+
+  function isLegacySampleProduct(product, index) {
+    const sample = products[index];
+    if (!product || !sample) return false;
+
+    return (
+      String(product.name || "") === sample.name &&
+      String(product.material || "") === sample.material &&
+      Number(product.price || 0) === Number(sample.price || 0) &&
+      mediaSource(product.image || "") === mediaSource(sample.image || "") &&
+      mediaSource(product.video || "") === mediaSource(sample.video || "")
+    );
+  }
+
+  function isLegacySampleProductList(productList) {
+    return (
+      Array.isArray(productList) &&
+      productList.length > 0 &&
+      productList.length <= products.length &&
+      productList.every((product, index) => isLegacySampleProduct(product, index))
+    );
+  }
+
+  function defaultHeroSlides(sourceProducts = []) {
     const heroProducts = sourceProducts
       .map((product, index) => ({ product, index }))
       .filter(({ product }) => product.showInHero)
@@ -301,7 +338,7 @@
     collectionTitle: "흰 화면 위 또렷하게 보이는 케이스의 질감.",
     supportEyebrow: "After care",
     supportTitle: "판매 후에도 흐릿해지지 않는 기준.",
-    products,
+    products: [],
   };
 
   function clone(value) {
@@ -360,15 +397,15 @@
       return `<img class="${mediaClass} product-media-image" src="${escapeHtml(mediaSource(item.image))}" alt="${name} 이미지" loading="lazy" />`;
     }
 
-    return `<div class="case-mini ${caseClass}" style="--case-color: ${safeColor(item.color)}"></div>`;
+    return `<div class="product-media-empty ${caseClass}" aria-label="등록된 상품 미디어 없음">미디어 없음</div>`;
   }
 
   function mergeProduct(baseProduct, savedProduct) {
-    const fallback = baseProduct || products[0];
+    const fallback = baseProduct || blankProduct();
     const saved = savedProduct || {};
     const merged = { ...clone(fallback), ...saved };
-    merged.name = String(merged.name || fallback.name);
-    merged.material = String(merged.material || fallback.material);
+    merged.name = String(merged.name || fallback.name || "");
+    merged.material = String(merged.material || fallback.material || "");
     merged.color = safeColor(merged.color, fallback.color);
     merged.price = Number(merged.price) || Number(fallback.price) || 0;
     merged.mediaType = merged.mediaType === "video" ? "video" : "image";
@@ -384,8 +421,9 @@
         : typeof fallback.video === "string"
           ? fallback.video
           : "";
-    merged.showInHero = saved.showInHero === undefined ? Boolean(fallback.showInHero) : Boolean(saved.showInHero);
-    merged.description = String(merged.description || fallback.description);
+    merged.showInHero = false;
+    merged.isActive = saved.isActive === undefined ? fallback.isActive !== false : Boolean(saved.isActive);
+    merged.description = String(merged.description || fallback.description || "");
     return merged;
   }
 
@@ -446,7 +484,7 @@
       compact.integrations.tossClientKey = "";
     }
 
-    compact.products = compact.products.map((product) => {
+    compact.products = (compact.products || []).map((product) => {
       const nextProduct = { ...product };
       if (/^data:/i.test(nextProduct.image || "")) delete nextProduct.image;
       if (/^data:/i.test(nextProduct.video || "")) delete nextProduct.video;
@@ -516,9 +554,9 @@
       mobile: mergeResponsiveProfile(base.responsive.mobile, saved && saved.responsive ? saved.responsive.mobile : null, "mobile"),
     };
     if (Array.isArray(saved && saved.products)) {
-      const productCount = Math.max(base.products.length, saved.products.length);
-      merged.products = Array.from({ length: productCount }, (_, index) =>
-        mergeProduct(base.products[index] || base.products[0], saved.products[index]),
+      const savedProducts = isLegacySampleProductList(saved.products) ? [] : saved.products;
+      merged.products = savedProducts.map((product, index) =>
+        mergeProduct(base.products[index], product),
       );
     } else {
       merged.products = base.products.map((product) => mergeProduct(product));
@@ -618,6 +656,7 @@
     escapeHtml,
     safeColor,
     mediaSource,
+    isLegacySampleProductList,
     productHasMedia,
     productMediaKind,
     productMediaMarkup,

@@ -41,11 +41,7 @@ function productsUrl() {
 }
 
 function productHeroSlideItems() {
-  const selected = products
-    .map((product, index) => ({ product, index }))
-    .filter(({ product }) => product.showInHero);
-
-  return selected.length ? selected : products.map((product, index) => ({ product, index }));
+  return [];
 }
 
 function campaignHeroSlideItems() {
@@ -58,7 +54,7 @@ function campaignHeroSlideItems() {
       const productIndex = Number.isFinite(Number(slide.productIndex))
         ? Number(slide.productIndex)
         : fallbackIndex;
-      const product = products[productIndex] || products[0];
+      const product = products[productIndex] || null;
       const desktopImage = mediaSource(slide.desktopImage);
       const mobileImage = mediaSource(slide.mobileImage);
       const image = screenKey === "mobile" ? mobileImage || desktopImage : desktopImage || mobileImage;
@@ -67,11 +63,11 @@ function campaignHeroSlideItems() {
         type: "campaign",
         slide,
         product,
-        index: products[productIndex] ? productIndex : 0,
+        index: product ? productIndex : -1,
         image,
       };
     })
-    .filter((item) => item.product && item.image);
+    .filter((item) => item.image);
 }
 
 function heroSlideItems() {
@@ -125,6 +121,27 @@ function heroMediaContentMarkup(product) {
 
 function useStaticHeroImage() {
   return false;
+}
+
+function renderEmptyHero() {
+  activeHeroSlide = 0;
+  renderHeroDots([]);
+  hero.classList.add("is-empty-hero");
+  hero.classList.remove("is-campaign-hero", "is-switching");
+  heroTitle.textContent = "메인 슬라이드 준비 중";
+  heroSubtitle.textContent = "관리자에서 완성된 PC/모바일 이미지를 업로드하면 이 영역에 표시됩니다.";
+  heroCopyLink.href = productsUrl();
+  heroCopyLink.setAttribute("aria-label", "상품 목록으로 이동");
+  if (heroMobileProductLink) {
+    heroMobileProductLink.href = productsUrl();
+    heroMobileProductLink.textContent = "상품 준비 중";
+    heroMobileProductLink.setAttribute("aria-label", "상품 목록으로 이동");
+  }
+  heroMediaLink.href = productsUrl();
+  heroMediaLink.dataset.mediaMode = "empty";
+  heroMediaLink.classList.remove("has-product-media", "is-campaign-media", "is-static-hero");
+  heroMediaLink.innerHTML = `<span class="hero-empty-message">VELTIER</span>`;
+  heroPreload.href = settings.heroImage;
 }
 
 function staticHeroMediaMarkup() {
@@ -207,7 +224,10 @@ function renderHeroDots(slides) {
 
 function renderHeroSlide(nextIndex = 0, immediate = false) {
   const slides = heroSlideItems();
-  if (!slides.length && !useStaticHeroImage()) return;
+  if (!slides.length && !useStaticHeroImage()) {
+    renderEmptyHero();
+    return;
+  }
 
   if (useStaticHeroImage()) {
     activeHeroSlide = 0;
@@ -238,7 +258,8 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
   const item = slides[activeHeroSlide];
   const { product, index } = item;
   const isCampaignSlide = item.type === "campaign";
-  const detailUrl = productUrl(index);
+  const detailUrl = product ? productUrl(index) : productsUrl();
+  const productName = product?.name || settings.brandName;
   const swapDelay = immediate ? 0 : Math.round(heroTransitionMs() * 0.45);
 
   if (heroSwapTimer) {
@@ -251,14 +272,15 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
 
   heroSwapTimer = window.setTimeout(
     () => {
-      heroTitle.textContent = product.name;
-      heroSubtitle.textContent = product.description;
+      hero.classList.remove("is-empty-hero");
+      heroTitle.textContent = productName;
+      heroSubtitle.textContent = product?.description || "";
       heroCopyLink.href = detailUrl;
-      heroCopyLink.setAttribute("aria-label", `${product.name} 상세페이지로 이동`);
+      heroCopyLink.setAttribute("aria-label", `${productName} 상세페이지로 이동`);
       if (heroMobileProductLink) {
         heroMobileProductLink.href = detailUrl;
         heroMobileProductLink.textContent = "상품 보기";
-        heroMobileProductLink.setAttribute("aria-label", `${product.name} 상품 보기`);
+        heroMobileProductLink.setAttribute("aria-label", `${productName} 상품 보기`);
       }
       heroMediaLink.href = detailUrl;
       heroMediaLink.dataset.mediaMode = isCampaignSlide ? "campaign" : settings.heroMediaMode || "blend";
@@ -266,11 +288,11 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
       heroMediaLink.classList.toggle("is-campaign-media", isCampaignSlide);
       heroMediaLink.classList.toggle("has-product-media", !isCampaignSlide && productHasMedia(product));
       heroMediaLink.innerHTML = isCampaignSlide
-        ? `<img class="hero-campaign-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(product.name)} 메인 슬라이드" loading="eager" />`
+        ? `<img class="hero-campaign-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(productName)} 메인 슬라이드" loading="eager" />`
         : heroMediaContentMarkup(product);
       hero.classList.toggle("is-campaign-hero", isCampaignSlide);
 
-      const productImage = mediaSource(product.image);
+      const productImage = mediaSource(product?.image);
       const preloadImage = isCampaignSlide ? item.image : productImage;
       heroPreload.href = preloadImage && !preloadImage.startsWith("data:") ? preloadImage : settings.heroImage;
       window.requestAnimationFrame(() => {
@@ -346,6 +368,19 @@ function preventHeroSwipeClick(event) {
 }
 
 function renderProducts() {
+  if (!products.length) {
+    productGrid.innerHTML = `
+      <div class="product-empty-state">
+        <strong>등록된 상품이 없습니다.</strong>
+        <p>관리자 상품 관리에서 실제 판매할 상품과 업로드 파일을 추가하세요.</p>
+      </div>
+    `;
+    if (collectionViewAllLink) collectionViewAllLink.hidden = true;
+    setupRevealAnimations();
+    return;
+  }
+
+  if (collectionViewAllLink) collectionViewAllLink.hidden = false;
   const screenProfile = responsiveProfile(settings);
   const fallbackCount = catalogMobileQuery.matches ? 4 : 8;
   const previewCount = Math.round(clampNumber(screenProfile.productPreviewCount, fallbackCount, 2, 12));

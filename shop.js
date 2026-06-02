@@ -225,6 +225,10 @@
     };
   }
 
+  function isLegacySampleProductList(products = []) {
+    return Boolean(window.CaseformConfig?.isLegacySampleProductList?.(products));
+  }
+
   function productToRow(product, index) {
     return {
       product_index: index,
@@ -235,7 +239,7 @@
       media_type: product.mediaType === "video" ? "video" : "image",
       image: String(product.image || ""),
       video: String(product.video || ""),
-      show_in_hero: Boolean(product.showInHero),
+      show_in_hero: false,
       is_active: product.isActive !== false,
       sort_order: index,
       description: String(product.description || ""),
@@ -482,8 +486,12 @@
     return reviewCache;
   }
 
-  async function loadProducts(settings) {
-    const fallbackProducts = (settings && settings.products) || [];
+  async function loadProducts(settings, options = {}) {
+    const includeInactive = Boolean(options.includeInactive);
+    const savedProducts = (settings && settings.products) || [];
+    const fallbackProducts = includeInactive
+      ? savedProducts
+      : savedProducts.filter((product) => product.isActive !== false);
 
     if (!client) {
       productCache = fallbackProducts;
@@ -502,7 +510,14 @@
       return productCache;
     }
 
-    productCache = data && data.length ? data.map(rowToProduct) : fallbackProducts;
+    const loadedProducts = data && data.length ? data.map(rowToProduct) : [];
+    productCache = loadedProducts.length
+      ? isLegacySampleProductList(loadedProducts)
+        ? []
+        : includeInactive
+          ? loadedProducts
+          : loadedProducts.filter((product) => product.isActive !== false)
+      : fallbackProducts;
     return productCache;
   }
 
@@ -534,11 +549,11 @@
     return inventoryCache;
   }
 
-  async function getProductSettings(settings) {
+  async function getProductSettings(settings, options = {}) {
     const baseSettings = window.CaseformConfig
       ? window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, settings)
       : settings;
-    const products = await loadProducts(baseSettings);
+    const products = await loadProducts(baseSettings, options);
     await loadInventory({ ...baseSettings, products });
     return { ...baseSettings, products };
   }
@@ -550,6 +565,17 @@
     }
 
     if (!isAdmin()) throw new Error("상품 저장은 관리자 권한이 필요합니다.");
+
+    if (!products.length) {
+      const { error } = await client
+        .from("products")
+        .update({ is_active: false, show_in_hero: false, updated_at: new Date().toISOString() })
+        .gte("product_index", 0);
+
+      if (error) throw error;
+      productCache = [];
+      return productCache;
+    }
 
     const rows = products.map(productToRow);
     const { data, error } = await client

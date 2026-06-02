@@ -57,6 +57,18 @@ function applySettings() {
 }
 
 function renderProducts() {
+  if (!products.length) {
+    productGrid.innerHTML = `
+      <div class="product-empty-state catalog-empty-state">
+        <strong>등록된 상품이 없습니다.</strong>
+        <p>관리자 상품 관리에서 상품을 추가하면 이 페이지에 표시됩니다.</p>
+      </div>
+    `;
+    renderCatalogPagination(1);
+    setupRevealAnimations();
+    return;
+  }
+
   const pageSize = catalogMobileQuery.matches ? 10 : 20;
   const pageCount = Math.max(1, Math.ceil(products.length / pageSize));
   activeCatalogPage = Math.max(0, Math.min(activeCatalogPage, pageCount - 1));

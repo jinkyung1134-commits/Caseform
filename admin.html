@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER Admin</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20260603-hero-slides" />
-    <link rel="stylesheet" href="admin.css?v=20260603-hero-slides" />
+    <link rel="stylesheet" href="styles.css?v=20260603-upload-media-products" />
+    <link rel="stylesheet" href="admin.css?v=20260603-upload-media-products" />
   </head>
   <body class="admin-body">
     <header class="admin-header">
@@ -275,6 +275,7 @@
                   <div class="admin-toolbar">
                     <button class="button secondary" id="product-add-button" type="button">상품 추가</button>
                     <button class="button secondary" id="product-save-draft-button" type="button">현재 입력 임시 저장</button>
+                    <button class="button secondary danger" id="product-clear-button" type="button">전체 상품 비우기</button>
                   </div>
                   <div class="admin-products" id="admin-products"></div>
                 </section>
@@ -377,11 +378,11 @@
       </div>
     </main>
 
-    <script src="site-config.js?v=20260603-hero-slides"></script>
+    <script src="site-config.js?v=20260603-upload-media-products"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="payments-config.js?v=20260602-commerce-launch"></script>
-    <script src="shop.js?v=20260602-auth-flow"></script>
-    <script src="admin.js?v=20260603-hero-slides"></script>
+    <script src="shop.js?v=20260603-upload-media-products"></script>
+    <script src="admin.js?v=20260603-upload-media-products"></script>
   </body>
 </html>

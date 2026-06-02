@@ -2,8 +2,8 @@ let settings = window.CaseformConfig.load();
 let products = settings.products;
 const params = new URLSearchParams(window.location.search);
 let selectedIndex = 0;
-let product = products[0];
-const { escapeHtml, mediaSource, productHasMedia, productMediaMarkup } = window.CaseformConfig;
+let product = products[0] || null;
+const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
 const shop = window.CaseformShop;
 const detailFallbackImage = "assets/caseform-obsidian-grid-concept.png?v=20260601-scroll-image";
 const siteHeader = document.querySelector(".site-header");
@@ -21,6 +21,12 @@ const reviewMemberState = document.querySelector("#review-member-state");
 const reviewSubmit = document.querySelector("#review-submit");
 
 function syncSelectedProduct() {
+  if (!products.length) {
+    selectedIndex = -1;
+    product = null;
+    return;
+  }
+
   selectedIndex = Math.min(Math.max(Number(params.get("id")) || 0, 0), products.length - 1);
   product = products[selectedIndex] || products[0];
 }
@@ -59,6 +65,32 @@ function policyUrl(hash = "") {
   return `${window.CaseformConfig.urlFor("policies.html", settings)}${hash}`;
 }
 
+function renderUnavailableDetail() {
+  document.title = `상품 준비 중 - ${settings.brandName}`;
+  document.body.classList.add("product-unavailable");
+  document.querySelector("#detail-name").textContent = "상품 준비 중";
+  document.querySelector("#detail-media").innerHTML = `
+    <div class="product-media-empty product-detail-empty">
+      <strong>등록된 상품이 없습니다.</strong>
+      <span>관리자 상품 관리에서 실제 상품과 미디어 파일을 업로드하세요.</span>
+    </div>
+  `;
+  document.querySelector("#jump-purchase").textContent = "컬렉션 보기";
+  document.querySelector("#jump-purchase").addEventListener("click", () => {
+    window.location.href = productsUrl();
+  });
+  ["#scroll-story", "#purchase-section", "#reviews", ".related-slider-section"].forEach((selector) => {
+    const section = document.querySelector(selector);
+    if (section) section.hidden = true;
+  });
+  document.querySelector("#collection-link").href = productsUrl();
+  document.querySelector("#support-link").href = policyUrl("#shipping");
+  document.querySelector("[data-home-link]").href = indexUrl("");
+  if (shop) {
+    shop.setupHeaderActions(settings);
+  }
+}
+
 function renderProductMedia(target, options = {}) {
   target.classList.toggle("has-product-media", productHasMedia(product));
   target.innerHTML = productMediaMarkup(product, {
@@ -68,42 +100,92 @@ function renderProductMedia(target, options = {}) {
 }
 
 function productDetailImageSource() {
-  return mediaSource(product.image) || mediaSource(detailFallbackImage);
+  return mediaSource(product?.image);
 }
 
 function renderDetailHeroMedia(target) {
-  const source = productDetailImageSource();
-  const alt = `${product.name} 대표 이미지`;
+  const kind = productMediaKind(product);
+  const imageSource = productDetailImageSource();
+  const videoSource = mediaSource(product?.video);
+  const alt = `${product?.name || "상품"} 대표 미디어`;
 
-  target.classList.add("has-product-media", "has-hero-image");
-  target.classList.remove("has-hero-video");
-  target.innerHTML = `
-    <img class="product-detail-backdrop" src="${escapeHtml(source)}" alt="" aria-hidden="true" decoding="async" />
-    <span class="product-detail-light" aria-hidden="true"></span>
-    <img
-      class="product-media product-detail-media product-hero-image"
-      src="${escapeHtml(source)}"
-      alt="${escapeHtml(alt)}"
-      decoding="async"
-      fetchpriority="high"
-    />
-  `;
+  target.classList.toggle("has-product-media", kind !== "case");
+  target.classList.toggle("has-hero-image", kind === "image");
+  target.classList.toggle("has-hero-video", kind === "video");
+
+  if (kind === "video" && videoSource) {
+    target.innerHTML = `
+      <video class="product-detail-backdrop" src="${escapeHtml(videoSource)}" autoplay muted loop playsinline aria-hidden="true"></video>
+      <span class="product-detail-light" aria-hidden="true"></span>
+      <video
+        class="product-media product-detail-media product-hero-video"
+        src="${escapeHtml(videoSource)}"
+        autoplay
+        muted
+        loop
+        playsinline
+        aria-label="${escapeHtml(alt)}"
+      ></video>
+    `;
+    return;
+  }
+
+  if (kind === "image" && imageSource) {
+    target.innerHTML = `
+      <img class="product-detail-backdrop" src="${escapeHtml(imageSource)}" alt="" aria-hidden="true" decoding="async" />
+      <span class="product-detail-light" aria-hidden="true"></span>
+      <img
+        class="product-media product-detail-media product-hero-image"
+        src="${escapeHtml(imageSource)}"
+        alt="${escapeHtml(alt)}"
+        decoding="async"
+        fetchpriority="high"
+      />
+    `;
+    return;
+  }
+
+  target.innerHTML = `<div class="product-media-empty product-detail-empty">미디어 없음</div>`;
 }
 
 function renderStoryMedia(target) {
-  const source = productDetailImageSource();
-  const alt = `${product.name} 스크롤 쇼케이스 이미지`;
+  const kind = productMediaKind(product);
+  const imageSource = productDetailImageSource();
+  const videoSource = mediaSource(product?.video);
+  const alt = `${product?.name || "상품"} 상세 미디어`;
 
-  target.classList.add("has-product-media");
-  target.innerHTML = `
-    <img class="story-media-backdrop" src="${escapeHtml(source)}" alt="" aria-hidden="true" decoding="async" />
-    <img
-      class="product-media story-product-media"
-      src="${escapeHtml(source)}"
-      alt="${escapeHtml(alt)}"
-      loading="lazy"
-    />
-  `;
+  target.classList.toggle("has-product-media", kind !== "case");
+
+  if (kind === "video" && videoSource) {
+    target.innerHTML = `
+      <video class="story-media-backdrop" src="${escapeHtml(videoSource)}" autoplay muted loop playsinline aria-hidden="true"></video>
+      <video
+        class="product-media story-product-media"
+        src="${escapeHtml(videoSource)}"
+        autoplay
+        muted
+        loop
+        playsinline
+        aria-label="${escapeHtml(alt)}"
+      ></video>
+    `;
+    return;
+  }
+
+  if (kind === "image" && imageSource) {
+    target.innerHTML = `
+      <img class="story-media-backdrop" src="${escapeHtml(imageSource)}" alt="" aria-hidden="true" decoding="async" />
+      <img
+        class="product-media story-product-media"
+        src="${escapeHtml(imageSource)}"
+        alt="${escapeHtml(alt)}"
+        loading="lazy"
+      />
+    `;
+    return;
+  }
+
+  target.innerHTML = `<div class="product-media-empty story-product-media">미디어 없음</div>`;
 }
 
 function renderDetail() {
@@ -180,6 +262,18 @@ function renderRelated() {
   const related = products
     .map((item, index) => ({ item, index }))
     .filter(({ index }) => index !== selectedIndex);
+
+  if (!related.length) {
+    relatedTrack.innerHTML = `<div class="product-empty-state related-empty-state">관련 상품이 없습니다.</div>`;
+    document.querySelectorAll("[data-related-action]").forEach((button) => {
+      button.hidden = true;
+    });
+    return;
+  }
+
+  document.querySelectorAll("[data-related-action]").forEach((button) => {
+    button.hidden = false;
+  });
 
   relatedTrack.innerHTML = related
     .map(
@@ -433,6 +527,11 @@ async function boot() {
   syncSelectedProduct();
   await hydrateProductSettings();
   applyTheme();
+  if (!product) {
+    renderUnavailableDetail();
+    setupHeaderMenu();
+    return;
+  }
   renderDetail();
   renderDeviceOptions();
   renderRelated();

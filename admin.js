@@ -46,6 +46,7 @@ const uiDeviceTabButtons = [...document.querySelectorAll("[data-ui-device-tab]")
 const uiDevicePanels = [...document.querySelectorAll("[data-ui-device-panel]")];
 const productAddButton = document.querySelector("#product-add-button");
 const productSaveDraftButton = document.querySelector("#product-save-draft-button");
+const productClearButton = document.querySelector("#product-clear-button");
 const heroSlideList = document.querySelector("#hero-slide-list");
 const heroSlideAddButton = document.querySelector("#hero-slide-add-button");
 const imagePreset = form.elements.heroImagePreset || null;
@@ -540,7 +541,7 @@ function renderOpsChecklist() {
     ["Supabase 연결", shop?.isSupabaseEnabled?.() ? "완료" : "로컬 모드"],
     ["관리자 권한", shop?.isAdmin?.() ? "확인됨" : "확인 필요"],
     ["상품 수", `${settings.products.length}개`],
-    ["메인 노출", `${settings.products.filter((product) => product.showInHero).length}개`],
+    ["메인 슬라이드", `${(settings.heroSlides || []).filter((slide) => slide.isActive !== false).length}개`],
     ["재고 주의", `${shop?.getInventory?.().filter((item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0)).length || 0}개`],
     ["운영 정책", policyHasPlaceholders ? "사업자 정보 입력 전" : "완료"],
     ["Toss Client Key", commerceStatus.tossClientKey],
@@ -691,7 +692,7 @@ async function bootAdmin() {
 
       if (access.allowed) {
         if (shop?.getProductSettings) {
-          settings = await shop.getProductSettings(settings);
+          settings = await shop.getProductSettings(settings, { includeInactive: true });
         }
 
         if (!adminReady) {
@@ -771,6 +772,16 @@ function previewMediaBackdropMarkup(product) {
 }
 
 function renderProductFields() {
+  if (!settings.products.length) {
+    productHost.innerHTML = `
+      <div class="admin-empty product-admin-empty">
+        <strong>등록된 상품이 없습니다.</strong>
+        <p>상품 추가를 눌러 실제 판매할 상품명, 가격, 업로드 파일을 등록하세요.</p>
+      </div>
+    `;
+    return;
+  }
+
   productHost.innerHTML = settings.products
     .map(
       (product, index) => `
@@ -810,24 +821,20 @@ function renderProductFields() {
             </select>
           </label>
           <label class="admin-toggle wide-field">
-            <input name="product-${index}-showInHero" type="checkbox"${product.showInHero ? " checked" : ""} />
-            <span>메인 상품 슬라이드에 표시</span>
-          </label>
-          <label class="admin-toggle wide-field">
             <input name="product-${index}-isActive" type="checkbox"${product.isActive !== false ? " checked" : ""} />
             <span>판매 화면에 노출</span>
           </label>
           <label class="wide-field">
             <span>이미지 경로</span>
-            <input name="product-${index}-image" type="text" value="${escapeHtml(product.image)}" placeholder="assets/product.png" />
+            <input name="product-${index}-image" type="text" value="${escapeHtml(product.image)}" placeholder="업로드하면 자동으로 입력됩니다" />
           </label>
           <label>
-            <span>이미지 파일</span>
-            <input name="product-${index}-imageFile" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,image/*" data-product-index="${index}" data-media-kind="image" />
+            <span>이미지/움직이는 이미지</span>
+            <input name="product-${index}-imageFile" type="file" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif,image/*" data-product-index="${index}" data-media-kind="image" />
           </label>
           <label class="wide-field">
             <span>동영상 경로</span>
-            <input name="product-${index}-video" type="text" value="${escapeHtml(product.video)}" placeholder="assets/product.mp4" />
+            <input name="product-${index}-video" type="text" value="${escapeHtml(product.video)}" placeholder="업로드하면 자동으로 입력됩니다" />
           </label>
           <label>
             <span>동영상 파일</span>
@@ -858,23 +865,24 @@ function heroSlideImageForMode(slide, mode = "desktop") {
 }
 
 function heroSlideProductOptions(selectedIndex) {
+  if (!settings.products.length) {
+    return `<option value="-1" selected disabled>먼저 상품을 추가하세요</option>`;
+  }
+
   return settings.products
     .map((product, index) => {
       const selected = Number(selectedIndex) === index ? " selected" : "";
-      return `<option value="${index}"${selected}>${index + 1}. ${escapeHtml(product.name)}</option>`;
+      return `<option value="${index}"${selected}>${index + 1}. ${escapeHtml(product.name || "상품명 미입력")}</option>`;
     })
     .join("");
 }
 
 function createBlankHeroSlide() {
-  const heroProductIndex = settings.products.findIndex((product) => product.showInHero);
-  const productIndex = heroProductIndex >= 0 ? heroProductIndex : 0;
-
   return {
     id: `hero-slide-${Date.now()}`,
     desktopImage: "",
     mobileImage: "",
-    productIndex,
+    productIndex: 0,
     isActive: true,
   };
 }
@@ -994,6 +1002,12 @@ function handleHeroSlideAction(action, index) {
   const slide = slides[index];
 
   if (action === "add") {
+    if (!settings.products.length) {
+      statusText.textContent = "메인 슬라이드 연결을 위해 먼저 상품을 추가해주세요.";
+      setAdminView("products");
+      return;
+    }
+
     replaceHeroSlides([...slides, createBlankHeroSlide()], "메인 슬라이드가 추가되었습니다.");
     return;
   }
@@ -1145,7 +1159,7 @@ function collectProducts() {
     mediaType: form.elements[`product-${index}-mediaType`].value === "video" ? "video" : "image",
     image: form.elements[`product-${index}-image`].value.trim(),
     video: form.elements[`product-${index}-video`].value.trim(),
-    showInHero: form.elements[`product-${index}-showInHero`].checked,
+    showInHero: false,
     isActive: form.elements[`product-${index}-isActive`].checked,
     description:
       form.elements[`product-${index}-description`].value.trim() || product.description,
@@ -1154,16 +1168,16 @@ function collectProducts() {
 
 function createBlankProduct() {
   return {
-    name: `New Case ${settings.products.length + 1}`,
-    material: "소재 입력",
+    name: `New Product ${settings.products.length + 1}`,
+    material: "",
     color: "#f3eadb",
-    price: 39000,
+    price: 0,
     mediaType: "image",
     image: "",
     video: "",
     showInHero: false,
-    isActive: false,
-    description: "새 상품 설명을 입력하세요.",
+    isActive: true,
+    description: "",
   };
 }
 
@@ -1193,10 +1207,6 @@ function handleProductAction(action, index) {
   }
 
   if (action === "delete") {
-    if (products.length <= 1) {
-      statusText.textContent = "상품은 최소 1개가 필요합니다.";
-      return;
-    }
     products.splice(index, 1);
     replaceProducts(products, "상품을 삭제했습니다. 설정 저장을 누르면 Supabase에 반영됩니다.");
     return;
@@ -1336,6 +1346,17 @@ function normalizeDataUrl(file, result, mediaKind) {
   return value;
 }
 
+function shouldPreserveImageFile(file) {
+  const name = String(file?.name || "").toLowerCase();
+  const type = String(file?.type || "").toLowerCase();
+  return type === "image/gif" || type === "image/webp" || /\.(gif|webp)$/.test(name);
+}
+
+async function localImageValue(file, result) {
+  const normalized = normalizeDataUrl(file, result, "image");
+  return shouldPreserveImageFile(file) ? normalized : optimizeImageDataUrl(file, normalized);
+}
+
 function optimizeImageDataUrl(file, dataUrl) {
   return new Promise((resolve) => {
     const image = new Image();
@@ -1408,7 +1429,7 @@ function readProductFile(input) {
       } else {
         const normalized = normalizeDataUrl(file, reader.result, mediaKind);
         targetField.value =
-          mediaKind === "image" ? await optimizeImageDataUrl(file, normalized) : normalized;
+          mediaKind === "image" ? await localImageValue(file, reader.result) : normalized;
       }
 
       mediaTypeField.value = mediaKind;
@@ -1417,7 +1438,7 @@ function readProductFile(input) {
     } catch (error) {
       const normalized = normalizeDataUrl(file, reader.result, mediaKind);
       targetField.value =
-        mediaKind === "image" ? await optimizeImageDataUrl(file, normalized) : normalized;
+        mediaKind === "image" ? await localImageValue(file, reader.result) : normalized;
       mediaTypeField.value = mediaKind;
       updatePreview();
       statusText.textContent = error.message || "업로드 실패";
@@ -1453,15 +1474,13 @@ function readHeroSlideFile(input) {
           mediaKind: "hero-slide",
         });
       } else {
-        const normalized = normalizeDataUrl(file, reader.result, "image");
-        targetField.value = await optimizeImageDataUrl(file, normalized);
+        targetField.value = await localImageValue(file, reader.result);
       }
 
       updatePreview();
       saveMediaDraft();
     } catch (error) {
-      const normalized = normalizeDataUrl(file, reader.result, "image");
-      targetField.value = await optimizeImageDataUrl(file, normalized);
+      targetField.value = await localImageValue(file, reader.result);
       updatePreview();
       statusText.textContent = error.message || "슬라이드 이미지 업로드에 실패했습니다.";
     }
@@ -1594,7 +1613,7 @@ if (heroSlideList) {
 if (productAddButton) {
   productAddButton.addEventListener("click", () => {
     syncSettingsFromInputs();
-    replaceProducts([...settings.products, createBlankProduct()], "새 상품을 추가했습니다.");
+    replaceProducts([...settings.products, createBlankProduct()], "새 상품을 추가했습니다. 상품 파일을 업로드해주세요.");
   });
 }
 
@@ -1603,6 +1622,16 @@ if (productSaveDraftButton) {
     syncSettingsFromInputs();
     populate();
     statusText.textContent = "현재 입력을 임시 저장했습니다.";
+  });
+}
+
+if (productClearButton) {
+  productClearButton.addEventListener("click", () => {
+    settings = { ...settings, products: [] };
+    window.CaseformConfig.save(settings);
+    populate();
+    renderOperationPanels();
+    statusText.textContent = "상품 목록을 비웠습니다. 설정 저장을 누르면 Supabase에도 반영됩니다.";
   });
 }
 
