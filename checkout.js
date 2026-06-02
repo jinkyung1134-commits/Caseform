@@ -87,6 +87,15 @@ function fillMemberFields() {
   checkoutForm.elements.recipientName.value = member.name || "";
   checkoutForm.elements.phone.value = member.phone || "";
   checkoutForm.elements.email.value = member.email || "";
+  const address = shop.getDefaultAddress ? shop.getDefaultAddress() : null;
+  if (address) {
+    checkoutForm.elements.recipientName.value = address.recipientName || checkoutForm.elements.recipientName.value;
+    checkoutForm.elements.phone.value = address.phone || checkoutForm.elements.phone.value;
+    checkoutForm.elements.postalCode.value = address.postalCode || "";
+    checkoutForm.elements.address1.value = address.address1 || "";
+    checkoutForm.elements.address2.value = address.address2 || "";
+    checkoutForm.elements.deliveryNote.value = address.deliveryNote || "";
+  }
   orderSubmit.disabled = !shop.getCart().length;
 }
 
@@ -137,7 +146,20 @@ checkoutForm.addEventListener("submit", async (event) => {
   orderSubmit.disabled = true;
 
   try {
-    const order = await shop.createOrder(Object.fromEntries(new FormData(checkoutForm)));
+    const formValues = Object.fromEntries(new FormData(checkoutForm));
+    const order = await shop.createOrder(formValues);
+    if (formValues.saveAddress && shop.saveAddress) {
+      await shop.saveAddress({
+        label: "기본 배송지",
+        recipientName: formValues.recipientName,
+        phone: formValues.phone,
+        postalCode: formValues.postalCode,
+        address1: formValues.address1,
+        address2: formValues.address2,
+        deliveryNote: formValues.deliveryNote,
+        isDefault: true,
+      });
+    }
     checkoutStatus.textContent = `주문 ${order.orderNumber}이 생성되었습니다.`;
     paymentState.textContent = `주문 ${order.orderNumber} · 결제 연결 대기`;
     renderSummary();

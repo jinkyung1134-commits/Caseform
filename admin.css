@@ -203,7 +203,10 @@
 
 .orders-panel,
 .inventory-panel,
-.notification-panel {
+.notification-panel,
+.review-admin-panel,
+.template-panel,
+.operations-panel {
   margin-bottom: 14px;
 }
 
@@ -232,6 +235,65 @@
 .notification-list {
   display: grid;
   gap: 12px;
+}
+
+.admin-sublist,
+.email-template-list,
+.ops-checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-subitem,
+.email-template-card,
+.ops-check {
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fbfaf7;
+}
+
+.admin-subitem strong,
+.email-template-card strong,
+.ops-check strong {
+  color: var(--ink);
+}
+
+.admin-subitem span,
+.admin-subitem p,
+.email-template-card span,
+.email-template-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-inline-actions,
+.product-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-inline-actions .button,
+.product-admin-actions .button,
+.email-template-card .button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.ops-check {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.ops-check span {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .admin-order-card,

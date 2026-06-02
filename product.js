@@ -108,6 +108,22 @@ function renderStoryMedia(target) {
 
 function renderDetail() {
   document.title = `${product.name} - ${settings.brandName}`;
+  const description = `${product.name} ${product.material} 케이스. 기종 선택과 구매자 리뷰를 확인하세요.`;
+  document.querySelector('meta[name="description"]')?.setAttribute("content", description);
+  document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${product.name} - ${settings.brandName}`);
+  document.querySelector('meta[property="og:description"]')?.setAttribute("content", description);
+  document.querySelector('link[rel="canonical"]')?.setAttribute(
+    "href",
+    `https://jinkyung1134-commits.github.io/Caseform/product.html?id=${selectedIndex}`,
+  );
+  document.querySelector('meta[property="og:url"]')?.setAttribute(
+    "content",
+    `https://jinkyung1134-commits.github.io/Caseform/product.html?id=${selectedIndex}`,
+  );
+  const shareImage = mediaSource(product.image);
+  if (shareImage && !shareImage.startsWith("data:")) {
+    document.querySelector('meta[property="og:image"]')?.setAttribute("content", new URL(shareImage, window.location.href).href);
+  }
   renderDetailHeroMedia(document.querySelector("#detail-media"));
   renderProductMedia(document.querySelector("#purchase-media"), {
     mediaClass: "product-media purchase-product-media",
@@ -332,14 +348,19 @@ function renderReviews() {
 function updateReviewFormState() {
   if (!reviewForm || !shop) return;
   const member = shop.currentMember();
+  const canReview = member && (!shop.canReviewProduct || shop.canReviewProduct(selectedIndex));
   const fields = reviewForm.querySelectorAll("input, select, textarea");
 
   fields.forEach((field) => {
-    field.disabled = !member;
+    field.disabled = !canReview;
   });
-  reviewSubmit.disabled = !member;
-  reviewSubmit.textContent = member ? "리뷰 등록" : "로그인 후 작성";
-  reviewMemberState.textContent = member ? `${member.name}님으로 작성` : "마이페이지에서 로그인 후 작성 가능";
+  reviewSubmit.disabled = !canReview;
+  reviewSubmit.textContent = !member ? "로그인 후 작성" : canReview ? "리뷰 등록" : "구매 후 작성";
+  reviewMemberState.textContent = !member
+    ? "마이페이지에서 로그인 후 작성 가능"
+    : canReview
+      ? `${member.name}님으로 작성`
+      : "구매한 상품만 작성 가능";
 }
 
 async function setupReviews() {

@@ -4,6 +4,7 @@
     session: "caseform-session-v1",
     cart: "caseform-cart-v1",
     reviews: "caseform-reviews-v1",
+    addresses: "caseform-addresses-v1",
   };
   const productMediaBucket = "product-media";
   const deviceOptions = [
@@ -72,6 +73,7 @@
   let orderCache = [];
   let inventoryCache = [];
   let notificationCache = [];
+  let addressCache = [];
   let inventoryRemoteReady = false;
   let notificationRemoteReady = false;
   let authListenerReady = false;
@@ -297,6 +299,37 @@
     };
   }
 
+  function rowToAddress(row) {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      label: row.label || "배송지",
+      recipientName: row.recipient_name || "",
+      phone: row.phone || "",
+      postalCode: row.postal_code || "",
+      address1: row.address1 || "",
+      address2: row.address2 || "",
+      deliveryNote: row.delivery_note || "",
+      isDefault: Boolean(row.is_default),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  function addressToRow(address) {
+    return {
+      label: String(address.label || "배송지").trim(),
+      recipient_name: String(address.recipientName || "").trim(),
+      phone: String(address.phone || "").trim(),
+      postal_code: String(address.postalCode || "").trim(),
+      address1: String(address.address1 || "").trim(),
+      address2: String(address.address2 || "").trim(),
+      delivery_note: String(address.deliveryNote || "").trim(),
+      is_default: Boolean(address.isDefault),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
   async function loadProfile() {
     if (!client || !authUser) {
       profileCache = null;
@@ -470,6 +503,10 @@
       .order("sort_order", { ascending: true });
 
     if (error) throw error;
+    await client
+      .from("products")
+      .update({ is_active: false, show_in_hero: false, updated_at: new Date().toISOString() })
+      .gte("product_index", products.length);
     productCache = (data || rows).map(rowToProduct);
     return productCache;
   }
@@ -551,6 +588,28 @@
     return notificationCache;
   }
 
+  async function loadAddresses() {
+    if (!client || !authUser) {
+      addressCache = [];
+      return addressCache;
+    }
+
+    const { data, error } = await client
+      .from("user_addresses")
+      .select("id, user_id, label, recipient_name, phone, postal_code, address1, address2, delivery_note, is_default, created_at, updated_at")
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.warn("VELTIER addresses could not be loaded.", error);
+      addressCache = [];
+      return addressCache;
+    }
+
+    addressCache = (data || []).map(rowToAddress);
+    return addressCache;
+  }
+
   async function refreshRemote(settings) {
     if (!client) return;
     if (authUser) {
@@ -562,6 +621,7 @@
     await Promise.all([
       authUser ? loadCart() : Promise.resolve([]),
       authUser ? loadOrders() : Promise.resolve([]),
+      authUser ? loadAddresses() : Promise.resolve([]),
       authUser && isAdmin() ? loadNotifications() : Promise.resolve([]),
       loadInventory(settings || window.caseformActiveSettings),
       loadReviews(),
@@ -649,7 +709,7 @@
     if (authUser) {
       await loadProfile();
       await syncLocalCartToRemote();
-      await loadCart();
+      await Promise.all([loadCart(), loadAddresses()]);
     }
 
     dispatchShopUpdate();
@@ -685,7 +745,7 @@
     authUser = data.user;
     await loadProfile();
     await syncLocalCartToRemote();
-    await Promise.all([loadCart(), loadOrders()]);
+    await Promise.all([loadCart(), loadOrders(), loadAddresses()]);
     dispatchShopUpdate();
     return profileCache;
   }
@@ -727,6 +787,7 @@
     profileCache = null;
     cartCache = [];
     orderCache = [];
+    addressCache = [];
     renderCartDrawer(window.caseformActiveSettings);
     dispatchShopUpdate();
   }
@@ -768,6 +829,96 @@
     profileCache = { ...data, role: data.role || member.role || "customer" };
     dispatchShopUpdate();
     return profileCache;
+  }
+
+  function getLocalAddressStore() {
+    return readJson(keys.addresses, []);
+  }
+
+  function setLocalAddressStore(addresses) {
+    writeJson(keys.addresses, addresses);
+  }
+
+  function getAddresses() {
+    const member = currentMember();
+    if (!member) return [];
+    if (client && authUser) return addressCache;
+    return getLocalAddressStore()
+      .filter((address) => normalizeEmail(address.email) === normalizeEmail(member.email))
+      .sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  }
+
+  function getDefaultAddress() {
+    return getAddresses().find((address) => address.isDefault) || getAddresses()[0] || null;
+  }
+
+  async function saveAddress(address) {
+    const member = currentMember();
+    if (!member) throw new Error("로그인 후 배송지를 저장할 수 있습니다.");
+
+    const payload = {
+      id: address.id || "",
+      label: String(address.label || "기본 배송지").trim(),
+      recipientName: String(address.recipientName || member.name || "").trim(),
+      phone: String(address.phone || member.phone || "").trim(),
+      postalCode: String(address.postalCode || "").trim(),
+      address1: String(address.address1 || "").trim(),
+      address2: String(address.address2 || "").trim(),
+      deliveryNote: String(address.deliveryNote || "").trim(),
+      isDefault: Boolean(address.isDefault),
+    };
+
+    if (!payload.recipientName) throw new Error("받는 분을 입력해주세요.");
+    if (!payload.phone) throw new Error("연락처를 입력해주세요.");
+    if (!payload.address1) throw new Error("주소를 입력해주세요.");
+
+    if (!client) {
+      const email = normalizeEmail(member.email);
+      const outside = getLocalAddressStore().filter((item) => normalizeEmail(item.email) !== email);
+      const own = getAddresses()
+        .filter((item) => item.id !== payload.id)
+        .map((item) => (payload.isDefault ? { ...item, isDefault: false } : item));
+      const nextAddress = {
+        ...payload,
+        id: payload.id || `address-${Date.now()}`,
+        email,
+        updatedAt: new Date().toISOString(),
+      };
+      setLocalAddressStore([...outside, ...own, nextAddress]);
+      dispatchShopUpdate();
+      return nextAddress;
+    }
+
+    if (payload.isDefault) {
+      await client.from("user_addresses").update({ is_default: false }).eq("user_id", authUser.id);
+    }
+
+    const row = { ...addressToRow(payload), user_id: authUser.id };
+    const query = payload.id
+      ? client.from("user_addresses").upsert({ ...row, id: payload.id }, { onConflict: "id" })
+      : client.from("user_addresses").insert(row);
+    const { data, error } = await query.select("*").single();
+    if (error) throw error;
+
+    await loadAddresses();
+    dispatchShopUpdate();
+    return rowToAddress(data);
+  }
+
+  async function deleteAddress(addressId) {
+    const member = currentMember();
+    if (!member) throw new Error("로그인이 필요합니다.");
+
+    if (!client) {
+      setLocalAddressStore(getLocalAddressStore().filter((address) => address.id !== addressId));
+      dispatchShopUpdate();
+      return;
+    }
+
+    const { error } = await client.from("user_addresses").delete().eq("id", addressId);
+    if (error) throw error;
+    await loadAddresses();
+    dispatchShopUpdate();
   }
 
   function getCart() {
@@ -1008,6 +1159,28 @@
     return updated;
   }
 
+  async function updateNotificationStatus(notificationId, status) {
+    if (!client) throw new Error("Supabase 연결 후 알림 상태를 수정할 수 있습니다.");
+    if (!isAdmin()) throw new Error("알림 상태 수정은 관리자 권한이 필요합니다.");
+
+    const cleanStatus = ["pending", "sent", "failed", "skipped"].includes(status) ? status : "pending";
+    const { data, error } = await client
+      .from("notification_events")
+      .update({
+        status: cleanStatus,
+        sent_at: cleanStatus === "sent" ? new Date().toISOString() : null,
+      })
+      .eq("id", notificationId)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    const updated = rowToNotification(data);
+    notificationCache = notificationCache.map((event) => (event.id === notificationId ? updated : event));
+    dispatchShopUpdate();
+    return updated;
+  }
+
   async function createOrder({
     recipientName,
     phone,
@@ -1093,6 +1266,11 @@
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
+  function getAllReviews() {
+    const source = client ? reviewCache || [] : ensureLocalReviews();
+    return [...source].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
   function getMemberReviews(email) {
     const cleanEmail = normalizeEmail(email);
     const source = client ? reviewCache || [] : ensureLocalReviews();
@@ -1111,6 +1289,7 @@
   async function addReview({ productIndex, rating, title, body }) {
     const member = currentMember();
     if (!member) throw new Error("로그인 후 리뷰를 작성할 수 있습니다.");
+    if (!canReviewProduct(productIndex)) throw new Error("구매한 상품만 리뷰를 작성할 수 있습니다.");
 
     const cleanTitle = String(title || "").trim();
     const cleanBody = String(body || "").trim();
@@ -1151,6 +1330,37 @@
     reviewCache = reviews;
     dispatchShopUpdate();
     return review;
+  }
+
+  function canReviewProduct(productIndex) {
+    const member = currentMember();
+    if (!member) return false;
+    if (!client) return true;
+    if (isAdmin()) return true;
+    return orderCache.some(
+      (order) =>
+        order.status !== "cancelled" &&
+        (order.paymentStatus === "paid" || ["paid", "preparing", "shipped", "delivered"].includes(order.status)) &&
+        (order.items || []).some((item) => Number(item.productIndex) === Number(productIndex)),
+    );
+  }
+
+  async function deleteReview(reviewId) {
+    const member = currentMember();
+    if (!member) throw new Error("로그인이 필요합니다.");
+
+    if (client && authUser) {
+      const { error } = await client.from("reviews").delete().eq("id", reviewId);
+      if (error) throw error;
+      await loadReviews();
+      dispatchShopUpdate();
+      return;
+    }
+
+    const reviews = ensureLocalReviews().filter((review) => review.id !== reviewId);
+    writeJson(keys.reviews, reviews);
+    reviewCache = reviews;
+    dispatchShopUpdate();
   }
 
   function renderCartCount() {
@@ -1323,6 +1533,10 @@
     signOut,
     updateProfile,
     getCart,
+    getAddresses,
+    getDefaultAddress,
+    saveAddress,
+    deleteAddress,
     addToCart,
     removeCartItem,
     cartCount,
@@ -1332,13 +1546,17 @@
     saveInventory,
     isVariantPurchasable,
     getReviews,
+    getAllReviews,
     getMemberReviews,
     addReview,
+    canReviewProduct,
+    deleteReview,
     getProductSettings,
     saveProducts,
     uploadProductMedia,
     getOrders,
     getNotifications,
+    updateNotificationStatus,
     updateOrder,
     createOrder,
     setupHeaderActions,

@@ -24,7 +24,15 @@ const inventorySeedButton = document.querySelector("#inventory-seed-button");
 const inventorySaveButton = document.querySelector("#inventory-save-button");
 const inventoryGrid = document.querySelector("#inventory-grid");
 const inventoryStatus = document.querySelector("#inventory-status");
+const lowStockList = document.querySelector("#low-stock-list");
+const adminReviewList = document.querySelector("#admin-review-list");
 const notificationList = document.querySelector("#notification-list");
+const emailTemplateList = document.querySelector("#email-template-list");
+const opsChecklist = document.querySelector("#ops-checklist");
+const opsStatus = document.querySelector("#ops-status");
+const adminExportButton = document.querySelector("#admin-export-button");
+const productAddButton = document.querySelector("#product-add-button");
+const productSaveDraftButton = document.querySelector("#product-save-draft-button");
 const imagePreset = form.elements.heroImagePreset || null;
 const homeLinks = [...document.querySelectorAll('a[href="index.html"]')];
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
@@ -59,6 +67,29 @@ const paymentProviders = {
   toss: "Toss Payments",
   stripe: "Stripe",
 };
+
+const emailTemplates = [
+  {
+    title: "회원가입 환영",
+    subject: "[VELTIER] 가입을 환영합니다",
+    body: "VELTIER에 가입해주셔서 감사합니다. 마이페이지에서 주문 내역과 리뷰를 확인할 수 있습니다.",
+  },
+  {
+    title: "주문 접수",
+    subject: "[VELTIER] 주문이 접수되었습니다",
+    body: "주문이 정상적으로 접수되었습니다. 관리자가 결제 및 재고 상태를 확인한 뒤 다음 상태로 변경합니다.",
+  },
+  {
+    title: "배송 시작",
+    subject: "[VELTIER] 상품이 발송되었습니다",
+    body: "주문하신 상품이 발송되었습니다. 마이페이지에서 송장번호와 배송조회 링크를 확인해주세요.",
+  },
+  {
+    title: "리뷰 요청",
+    subject: "[VELTIER] 사용감은 어떠셨나요?",
+    body: "상품을 받아보신 뒤 상세페이지에서 리뷰를 남겨주세요. 실제 사용감은 다음 고객에게 큰 도움이 됩니다.",
+  },
+];
 
 function roleLabel(role) {
   const labels = {
@@ -245,6 +276,31 @@ function renderInventoryGrid() {
     .join("");
 }
 
+function renderLowStockList() {
+  if (!lowStockList || !shop?.getInventory) return;
+  const inventory = shop
+    .getInventory()
+    .filter((item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0))
+    .slice(0, 10);
+
+  if (!inventory.length) {
+    lowStockList.innerHTML = `<div class="admin-empty">재고 주의 상품이 없습니다.</div>`;
+    return;
+  }
+
+  lowStockList.innerHTML = inventory
+    .map((item) => {
+      const product = settings.products[Number(item.productIndex)] || {};
+      return `
+        <div class="admin-subitem">
+          <strong>${escapeHtml(product.name || `상품 ${Number(item.productIndex) + 1}`)} / ${escapeHtml(item.device)}</strong>
+          <span>남은 재고 ${Number(item.stockQuantity || 0)}개 · 주의 기준 ${Number(item.lowStockThreshold || 0)}개</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
 function collectInventoryRows() {
   const productIndex = selectedInventoryIndex();
   return [...inventoryGrid.querySelectorAll(".inventory-row")].map((row) => ({
@@ -280,21 +336,116 @@ function renderNotifications() {
     .slice(0, 8)
     .map(
       (event) => `
-        <article class="notification-item">
+        <article class="notification-item" data-notification-id="${escapeHtml(event.id)}">
           <strong>${escapeHtml(event.subject)}</strong>
           <span>${escapeHtml(event.recipientEmail)} · ${escapeHtml(event.status)} · ${new Date(event.createdAt).toLocaleString("ko-KR")}</span>
           <p>${escapeHtml(event.body)}</p>
+          <div class="admin-inline-actions">
+            <button class="button secondary" type="button" data-notification-status="sent">발송 완료</button>
+            <button class="button secondary" type="button" data-notification-status="skipped">건너뜀</button>
+          </div>
         </article>
       `,
     )
     .join("");
 }
 
+function renderAdminReviews() {
+  if (!adminReviewList || !shop?.getAllReviews) return;
+  const reviews = shop.getAllReviews();
+
+  if (!reviews.length) {
+    adminReviewList.innerHTML = `<div class="admin-empty">등록된 리뷰가 없습니다.</div>`;
+    return;
+  }
+
+  adminReviewList.innerHTML = reviews
+    .slice(0, 12)
+    .map((review) => {
+      const product = settings.products[Number(review.productIndex)] || {};
+      return `
+        <div class="admin-subitem" data-review-id="${escapeHtml(review.id)}">
+          <strong>${"★".repeat(Number(review.rating || 0))} ${escapeHtml(review.title)}</strong>
+          <span>${escapeHtml(product.name || "상품")} · ${escapeHtml(review.author)} · ${new Date(review.createdAt).toLocaleDateString("ko-KR")}</span>
+          <p>${escapeHtml(review.body)}</p>
+          <div class="admin-inline-actions">
+            <button class="button secondary" type="button" data-review-delete>리뷰 삭제</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderEmailTemplates() {
+  if (!emailTemplateList) return;
+  emailTemplateList.innerHTML = emailTemplates
+    .map(
+      (template, index) => `
+        <article class="email-template-card">
+          <strong>${escapeHtml(template.title)}</strong>
+          <span>${escapeHtml(template.subject)}</span>
+          <p>${escapeHtml(template.body)}</p>
+          <button class="button secondary" type="button" data-template-copy="${index}">문구 복사</button>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderOpsChecklist() {
+  if (!opsChecklist) return;
+  const policyHasPlaceholders = true;
+  const checks = [
+    ["Supabase 연결", shop?.isSupabaseEnabled?.() ? "완료" : "로컬 모드"],
+    ["관리자 권한", shop?.isAdmin?.() ? "확인됨" : "확인 필요"],
+    ["상품 수", `${settings.products.length}개`],
+    ["메인 노출", `${settings.products.filter((product) => product.showInHero).length}개`],
+    ["재고 주의", `${shop?.getInventory?.().filter((item) => item.isAvailable && Number(item.stockQuantity || 0) <= Number(item.lowStockThreshold || 0)).length || 0}개`],
+    ["운영 정책", policyHasPlaceholders ? "사업자 정보 입력 전" : "완료"],
+    ["PG 연결", "나중에 진행"],
+    ["이메일 자동발송", "템플릿 준비됨"],
+  ];
+
+  opsChecklist.innerHTML = checks
+    .map(
+      ([label, value]) => `
+        <div class="ops-check">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function downloadOperationalBackup() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    settings: collectSettingsSafe(),
+    orders: shop?.getOrders?.() || [],
+    inventory: shop?.getInventory?.() || [],
+    reviews: shop?.getAllReviews?.() || [],
+    notifications: shop?.getNotifications?.() || [],
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `veltier-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  if (opsStatus) opsStatus.textContent = "운영 데이터 파일을 생성했습니다.";
+}
+
 function renderOperationPanels() {
   renderAdminOrders();
   renderInventorySelector();
   renderInventoryGrid();
+  renderLowStockList();
+  renderAdminReviews();
   renderNotifications();
+  renderEmailTemplates();
+  renderOpsChecklist();
   updateAdminDashboard();
 }
 
@@ -431,6 +582,12 @@ function renderProductFields() {
       (product, index) => `
         <fieldset class="admin-product" data-product-index="${index}">
           <legend>상품 ${index + 1}</legend>
+          <div class="product-admin-actions">
+            <button class="button secondary" type="button" data-product-action="duplicate" data-product-index="${index}">복제</button>
+            <button class="button secondary" type="button" data-product-action="up" data-product-index="${index}">위로</button>
+            <button class="button secondary" type="button" data-product-action="down" data-product-index="${index}">아래로</button>
+            <button class="button secondary" type="button" data-product-action="delete" data-product-index="${index}">삭제</button>
+          </div>
           <label>
             <span>상품명</span>
             <input name="product-${index}-name" type="text" value="${escapeHtml(product.name)}" />
@@ -592,6 +749,68 @@ function collectProducts() {
     description:
       form.elements[`product-${index}-description`].value.trim() || product.description,
   }));
+}
+
+function createBlankProduct() {
+  return {
+    name: `New Case ${settings.products.length + 1}`,
+    material: "소재 입력",
+    color: "#f3eadb",
+    price: 39000,
+    mediaType: "image",
+    image: "",
+    video: "",
+    showInHero: false,
+    isActive: false,
+    description: "새 상품 설명을 입력하세요.",
+  };
+}
+
+function syncSettingsFromInputs() {
+  settings = window.CaseformConfig.mergeSettings(window.CASEFORM_DEFAULTS, collectSettingsSafe());
+  window.CaseformConfig.save(settings);
+}
+
+function replaceProducts(nextProducts, message) {
+  settings = { ...settings, products: nextProducts };
+  window.CaseformConfig.save(settings);
+  populate();
+  renderOperationPanels();
+  statusText.textContent = message;
+}
+
+function handleProductAction(action, index) {
+  syncSettingsFromInputs();
+  const products = [...settings.products];
+  const product = products[index];
+  if (!product) return;
+
+  if (action === "duplicate") {
+    products.splice(index + 1, 0, { ...product, name: `${product.name} Copy`, showInHero: false, isActive: false });
+    replaceProducts(products, "상품을 복제했습니다.");
+    return;
+  }
+
+  if (action === "delete") {
+    if (products.length <= 1) {
+      statusText.textContent = "상품은 최소 1개가 필요합니다.";
+      return;
+    }
+    products.splice(index, 1);
+    replaceProducts(products, "상품을 삭제했습니다. 설정 저장을 누르면 Supabase에 반영됩니다.");
+    return;
+  }
+
+  if (action === "up" && index > 0) {
+    [products[index - 1], products[index]] = [products[index], products[index - 1]];
+    replaceProducts(products, "상품 순서를 변경했습니다.");
+    return;
+  }
+
+  if (action === "down" && index < products.length - 1) {
+    [products[index + 1], products[index]] = [products[index], products[index + 1]];
+    replaceProducts(products, "상품 순서를 변경했습니다.");
+  }
 }
 
 function updateProductPreviews(sourceSettings = collectSettingsSafe()) {
@@ -856,6 +1075,27 @@ productHost.addEventListener("change", (event) => {
   updateHomeLinks();
 });
 
+productHost.addEventListener("click", (event) => {
+  const actionButton = event.target.closest("[data-product-action]");
+  if (!actionButton) return;
+  handleProductAction(actionButton.dataset.productAction, Number(actionButton.dataset.productIndex));
+});
+
+if (productAddButton) {
+  productAddButton.addEventListener("click", () => {
+    syncSettingsFromInputs();
+    replaceProducts([...settings.products, createBlankProduct()], "새 상품을 추가했습니다.");
+  });
+}
+
+if (productSaveDraftButton) {
+  productSaveDraftButton.addEventListener("click", () => {
+    syncSettingsFromInputs();
+    populate();
+    statusText.textContent = "현재 입력을 임시 저장했습니다.";
+  });
+}
+
 if (adminOrderFilter) {
   adminOrderFilter.addEventListener("change", renderAdminOrders);
 }
@@ -892,6 +1132,67 @@ if (adminOrders) {
       saveButton.textContent = "주문 저장";
     }
   });
+}
+
+if (adminReviewList) {
+  adminReviewList.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-review-delete]");
+    if (!button || !shop) return;
+    const item = button.closest("[data-review-id]");
+
+    button.disabled = true;
+    button.textContent = "삭제 중";
+    try {
+      await shop.deleteReview(item.dataset.reviewId);
+      setAdminAuthStatus("리뷰를 삭제했습니다.", "success");
+      renderOperationPanels();
+    } catch (error) {
+      setAdminAuthStatus(error.message || "리뷰 삭제에 실패했습니다.", "warning");
+      button.disabled = false;
+      button.textContent = "리뷰 삭제";
+    }
+  });
+}
+
+if (notificationList) {
+  notificationList.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-notification-status]");
+    if (!button || !shop?.updateNotificationStatus) return;
+    const item = button.closest("[data-notification-id]");
+
+    button.disabled = true;
+    try {
+      await shop.updateNotificationStatus(item.dataset.notificationId, button.dataset.notificationStatus);
+      setAdminAuthStatus("알림 상태를 변경했습니다.", "success");
+      renderOperationPanels();
+    } catch (error) {
+      setAdminAuthStatus(error.message || "알림 상태 변경에 실패했습니다.", "warning");
+      button.disabled = false;
+    }
+  });
+}
+
+if (emailTemplateList) {
+  emailTemplateList.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-template-copy]");
+    if (!button) return;
+    const template = emailTemplates[Number(button.dataset.templateCopy)];
+    const text = `제목: ${template.subject}\n\n${template.body}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = "복사됨";
+      setTimeout(() => {
+        button.textContent = "문구 복사";
+      }, 1400);
+    } catch (error) {
+      setAdminAuthStatus("브라우저에서 복사를 허용하지 않았습니다. 문구를 직접 선택해주세요.", "warning");
+    }
+  });
+}
+
+if (adminExportButton) {
+  adminExportButton.addEventListener("click", downloadOperationalBackup);
 }
 
 if (inventoryProductSelect) {

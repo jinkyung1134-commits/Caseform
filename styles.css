@@ -2115,7 +2115,7 @@ legend,
 }
 
 .account-dashboard {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .account-panel,
@@ -2214,6 +2214,40 @@ legend,
   gap: 14px;
 }
 
+.address-form {
+  margin-bottom: 16px;
+}
+
+.address-form .wide-field,
+.address-form .button {
+  grid-column: 1 / -1;
+}
+
+.account-checkbox {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px !important;
+}
+
+.account-checkbox input {
+  width: 18px !important;
+  height: 18px;
+  accent-color: var(--gold-dark);
+}
+
+.account-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-inline-actions .button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
 .account-form label,
 .review-form label {
   display: grid;
@@ -2230,6 +2264,7 @@ legend,
 }
 
 .account-form input,
+.account-form textarea,
 .review-form input,
 .review-form select,
 .review-form textarea {
@@ -2243,6 +2278,7 @@ legend,
 }
 
 .account-form input:focus,
+.account-form textarea:focus,
 .review-form input:focus,
 .review-form select:focus,
 .review-form textarea:focus {
@@ -2251,6 +2287,7 @@ legend,
 }
 
 .account-form input:disabled,
+.account-form textarea:disabled,
 .review-form input:disabled,
 .review-form select:disabled,
 .review-form textarea:disabled,
@@ -2421,6 +2458,11 @@ legend,
   background: #fff;
   color: #171411;
   outline: none;
+}
+
+.checkout-form .account-checkbox input {
+  width: 18px;
+  padding: 0;
 }
 
 .checkout-form input:focus,

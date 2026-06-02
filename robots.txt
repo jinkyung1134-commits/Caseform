@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jinkyung1134-commits.github.io/Caseform/sitemap.xml

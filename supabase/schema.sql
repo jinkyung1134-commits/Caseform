@@ -371,12 +371,33 @@ create table if not exists public.notification_events (
   sent_at timestamptz
 );
 
+create table if not exists public.user_addresses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  label text not null default '기본 배송지',
+  recipient_name text not null,
+  phone text not null,
+  postal_code text default '',
+  address1 text not null,
+  address2 text default '',
+  delivery_note text default '',
+  is_default boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.product_variants enable row level security;
 alter table public.notification_events enable row level security;
+alter table public.user_addresses enable row level security;
 
 drop trigger if exists touch_product_variants_updated_at on public.product_variants;
 create trigger touch_product_variants_updated_at
 before update on public.product_variants
+for each row execute function public.touch_updated_at();
+
+drop trigger if exists touch_user_addresses_updated_at on public.user_addresses;
+create trigger touch_user_addresses_updated_at
+before update on public.user_addresses
 for each row execute function public.touch_updated_at();
 
 drop policy if exists "product_variants_select_public" on public.product_variants;
@@ -410,6 +431,12 @@ drop policy if exists "notification_events_admin_delete" on public.notification_
 create policy "notification_events_admin_delete"
 on public.notification_events for delete
 using (public.is_admin());
+
+drop policy if exists "user_addresses_manage_own" on public.user_addresses;
+create policy "user_addresses_manage_own"
+on public.user_addresses for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
 
 insert into public.product_variants (
   product_index,

@@ -34,6 +34,7 @@ window.CASEFORM_SUPABASE = {
 - `orders`, `order_items`: 결제 연결 전 단계의 주문 생성용 테이블입니다. 고객은 본인 주문만 보고, 관리자는 전체 주문을 볼 수 있습니다.
 - `product_variants`: 상품별 기종 옵션, SKU, 재고, 품절 여부를 관리합니다.
 - `notification_events`: 주문 생성과 주문 상태 변경 시 이메일 발송용 대기열을 저장합니다.
+- `user_addresses`: 고객이 마이페이지와 체크아웃에서 재사용할 배송지를 저장합니다.
 
 새 스키마를 실행한 뒤 관리자 페이지에서 상품을 저장하면 현재 상품 목록이 Supabase `products` 테이블로 동기화됩니다.
 

@@ -1,11 +1,19 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER 마이페이지</title>
     <meta name="description" content="VELTIER 회원가입, 로그인, 마이페이지, 리뷰 관리 화면." />
-    <link rel="stylesheet" href="styles.css?v=20260602-ops-core" />
+    <link rel="canonical" href="https://jinkyung1134-commits.github.io/Caseform/account.html" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="VELTIER 마이페이지" />
+    <meta property="og:description" content="VELTIER 회원 정보, 장바구니, 주문 내역, 배송지, 리뷰 관리." />
+    <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
+    <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/account.html" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="styles.css?v=20260602-prelaunch" />
   </head>
   <body class="account-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -123,6 +131,50 @@
           </div>
           <div class="account-list" id="account-order-list"></div>
         </article>
+        <article class="account-panel address-panel">
+          <div class="account-panel-head">
+            <p class="eyebrow">Address</p>
+            <h2>배송지</h2>
+          </div>
+          <form class="account-form address-form" id="address-form">
+            <input type="hidden" name="id" />
+            <label>
+              <span>배송지명</span>
+              <input type="text" name="label" placeholder="집" />
+            </label>
+            <label>
+              <span>받는 분</span>
+              <input type="text" name="recipientName" autocomplete="name" required />
+            </label>
+            <label>
+              <span>연락처</span>
+              <input type="tel" name="phone" autocomplete="tel" required />
+            </label>
+            <label>
+              <span>우편번호</span>
+              <input type="text" name="postalCode" inputmode="numeric" autocomplete="postal-code" />
+            </label>
+            <label class="wide-field">
+              <span>주소</span>
+              <input type="text" name="address1" autocomplete="street-address" required />
+            </label>
+            <label class="wide-field">
+              <span>상세 주소</span>
+              <input type="text" name="address2" />
+            </label>
+            <label class="wide-field">
+              <span>배송 메모</span>
+              <textarea name="deliveryNote" rows="2"></textarea>
+            </label>
+            <label class="account-checkbox wide-field">
+              <input type="checkbox" name="isDefault" checked />
+              <span>기본 배송지로 사용</span>
+            </label>
+            <button class="button primary" type="submit">배송지 저장</button>
+          </form>
+          <p class="form-status" id="address-status" aria-live="polite"></p>
+          <div class="account-list address-list" id="account-address-list"></div>
+        </article>
         <article class="account-panel">
           <div class="account-panel-head">
             <p class="eyebrow">Reviews</p>
@@ -136,7 +188,7 @@
     <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-ops-core"></script>
-    <script src="account.js?v=20260602-ops-core"></script>
+    <script src="shop.js?v=20260602-prelaunch"></script>
+    <script src="account.js?v=20260602-prelaunch"></script>
   </body>
 </html>

@@ -1,11 +1,19 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VELTIER 주문서</title>
     <meta name="description" content="VELTIER 주문 정보와 배송지를 확인하는 체크아웃 화면." />
-    <link rel="stylesheet" href="styles.css?v=20260602-ops-core" />
+    <link rel="canonical" href="https://jinkyung1134-commits.github.io/Caseform/checkout.html" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="VELTIER 주문서" />
+    <meta property="og:description" content="VELTIER 주문 정보와 배송지를 확인하는 체크아웃 화면." />
+    <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
+    <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/checkout.html" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="styles.css?v=20260602-prelaunch" />
   </head>
   <body class="checkout-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -71,6 +79,10 @@
             <span>배송 메모</span>
             <textarea name="deliveryNote" rows="3"></textarea>
           </label>
+          <label class="account-checkbox wide-field">
+            <input name="saveAddress" type="checkbox" checked />
+            <span>이 배송지를 기본 배송지로 저장</span>
+          </label>
           <label class="wide-field">
             <span>결제 방식</span>
             <select name="paymentProvider" id="payment-provider">
@@ -115,7 +127,7 @@
     <script src="site-config.js?v=20260602-commerce-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
-    <script src="shop.js?v=20260602-ops-core"></script>
-    <script src="checkout.js?v=20260602-ops-core"></script>
+    <script src="shop.js?v=20260602-prelaunch"></script>
+    <script src="checkout.js?v=20260602-prelaunch"></script>
   </body>
 </html>

@@ -11,9 +11,12 @@ const profileForm = document.querySelector("#profile-form");
 const googleAuthButton = document.querySelector("#google-auth-button");
 const authStatus = document.querySelector("#auth-status");
 const profileStatus = document.querySelector("#profile-status");
+const addressForm = document.querySelector("#address-form");
+const addressStatus = document.querySelector("#address-status");
 const accountCartList = document.querySelector("#account-cart-list");
 const accountOrderList = document.querySelector("#account-order-list");
 const accountReviewList = document.querySelector("#account-review-list");
+const accountAddressList = document.querySelector("#account-address-list");
 
 function productUrl(index) {
   return window.CaseformConfig.urlFor("product.html", settings, { id: String(index) });
@@ -91,6 +94,7 @@ function renderAccount() {
 
   renderCartSummary();
   renderOrderSummary();
+  renderAddressSummary();
   renderReviewSummary();
   shop.setupHeaderActions(settings);
 }
@@ -198,6 +202,58 @@ function renderReviewSummary() {
     .join("");
 }
 
+function fillAddressForm(address = null) {
+  if (!addressForm) return;
+  const member = shop.currentMember();
+  addressForm.elements.id.value = address?.id || "";
+  addressForm.elements.label.value = address?.label || "기본 배송지";
+  addressForm.elements.recipientName.value = address?.recipientName || member?.name || "";
+  addressForm.elements.phone.value = address?.phone || member?.phone || "";
+  addressForm.elements.postalCode.value = address?.postalCode || "";
+  addressForm.elements.address1.value = address?.address1 || "";
+  addressForm.elements.address2.value = address?.address2 || "";
+  addressForm.elements.deliveryNote.value = address?.deliveryNote || "";
+  addressForm.elements.isDefault.checked = address ? Boolean(address.isDefault) : true;
+}
+
+function renderAddressSummary() {
+  if (!accountAddressList || !addressForm) return;
+  const member = shop.currentMember();
+  addressForm.classList.toggle("is-hidden", !member);
+
+  if (!member) {
+    accountAddressList.innerHTML = `<div class="account-empty">로그인하면 배송지를 저장할 수 있습니다.</div>`;
+    return;
+  }
+
+  const addresses = shop.getAddresses ? shop.getAddresses() : [];
+  if (!addressForm.elements.address1.value && addresses.length) {
+    fillAddressForm(addresses.find((address) => address.isDefault) || addresses[0]);
+  }
+
+  if (!addresses.length) {
+    accountAddressList.innerHTML = `<div class="account-empty">저장된 배송지가 없습니다.</div>`;
+    return;
+  }
+
+  accountAddressList.innerHTML = addresses
+    .map(
+      (address) => `
+        <div class="account-list-item address-item" data-address-id="${escapeHtml(address.id)}">
+          <strong>${escapeHtml(address.label)}${address.isDefault ? " · 기본" : ""}</strong>
+          <span>${escapeHtml(address.recipientName)} · ${escapeHtml(address.phone)}</span>
+          <small>${escapeHtml([address.postalCode, address.address1, address.address2].filter(Boolean).join(" "))}</small>
+          ${address.deliveryNote ? `<small>${escapeHtml(address.deliveryNote)}</small>` : ""}
+          <div class="account-inline-actions">
+            <button class="button secondary" type="button" data-address-edit>수정</button>
+            <button class="button secondary" type="button" data-address-delete>삭제</button>
+          </div>
+        </div>
+      `,
+    )
+    .join("");
+}
+
 function setAuthTab(tabName) {
   document.querySelectorAll("[data-auth-tab]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.authTab === tabName);
@@ -281,6 +337,47 @@ profileForm.addEventListener("submit", async (event) => {
     profileStatus.textContent = error.message;
   }
 });
+
+if (addressForm) {
+  addressForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    addressStatus.textContent = "배송지를 저장하는 중입니다.";
+    try {
+      await shop.saveAddress(Object.fromEntries(new FormData(addressForm)));
+      addressStatus.textContent = "배송지가 저장되었습니다.";
+      fillAddressForm();
+      renderAccount();
+    } catch (error) {
+      addressStatus.textContent = error.message || "배송지를 저장하지 못했습니다.";
+    }
+  });
+}
+
+if (accountAddressList) {
+  accountAddressList.addEventListener("click", async (event) => {
+    const item = event.target.closest("[data-address-id]");
+    if (!item) return;
+    const address = shop.getAddresses().find((entry) => entry.id === item.dataset.addressId);
+
+    if (event.target.closest("[data-address-edit]")) {
+      fillAddressForm(address);
+      addressStatus.textContent = "배송지 내용을 수정한 뒤 저장하세요.";
+      return;
+    }
+
+    if (event.target.closest("[data-address-delete]")) {
+      addressStatus.textContent = "배송지를 삭제하는 중입니다.";
+      try {
+        await shop.deleteAddress(item.dataset.addressId);
+        addressStatus.textContent = "배송지를 삭제했습니다.";
+        fillAddressForm();
+        renderAccount();
+      } catch (error) {
+        addressStatus.textContent = error.message || "배송지를 삭제하지 못했습니다.";
+      }
+    }
+  });
+}
 
 document.querySelector("#signout-action").addEventListener("click", async () => {
   await shop.signOut();
