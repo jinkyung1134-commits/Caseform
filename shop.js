@@ -107,6 +107,26 @@
     return String(email || "").trim().toLowerCase();
   }
 
+  function authErrorMessage(error) {
+    const code = String(error?.code || "").toLowerCase();
+    const message = String(error?.message || "").toLowerCase();
+
+    if (code.includes("email_not_confirmed") || message.includes("email not confirmed")) {
+      return "이메일 인증이 아직 완료되지 않았어요. 가입 확인 메일에서 인증 후 다시 로그인해주세요.";
+    }
+    if (message.includes("invalid login credentials") || message.includes("invalid credentials")) {
+      return "이메일 또는 비밀번호를 확인해주세요.";
+    }
+    if (message.includes("too many") || message.includes("rate limit")) {
+      return "로그인 요청이 잠시 제한됐어요. 잠시 후 다시 시도해주세요.";
+    }
+    if (message.includes("user not found")) {
+      return "가입되지 않은 이메일입니다. 회원가입 후 다시 로그인해주세요.";
+    }
+
+    return error?.message || "로그인하지 못했습니다.";
+  }
+
   function normalizeCountryCode(value) {
     const code = String(value || "KR").trim().toUpperCase();
     return /^[A-Z]{2}$/.test(code) ? code : "KR";
@@ -823,10 +843,14 @@
 
   async function signIn({ email, password }) {
     const cleanEmail = normalizeEmail(email);
+    const cleanPassword = String(password || "");
+
+    if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("이메일을 확인해주세요.");
+    if (!cleanPassword) throw new Error("비밀번호를 입력해주세요.");
 
     if (!client) {
       const member = getMembers().find((item) => item.email === cleanEmail);
-      if (!member || member.password !== String(password || "")) {
+      if (!member || member.password !== cleanPassword) {
         throw new Error("이메일 또는 비밀번호를 확인해주세요.");
       }
       writeJson(keys.session, { email: cleanEmail, signedInAt: new Date().toISOString() });
@@ -836,9 +860,9 @@
 
     const { data, error } = await client.auth.signInWithPassword({
       email: cleanEmail,
-      password: String(password || ""),
+      password: cleanPassword,
     });
-    if (error) throw new Error("이메일 또는 비밀번호를 확인해주세요.");
+    if (error) throw new Error(authErrorMessage(error));
 
     authUser = data.user;
     await loadProfile();
