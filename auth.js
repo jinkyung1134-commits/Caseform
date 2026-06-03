@@ -278,18 +278,34 @@ window.addEventListener("caseform:shop-updated", redirectIfSignedIn);
 async function boot() {
   applySettings();
   setupHeaderMenu();
-  await shop.init(settings);
 
   const params = new URLSearchParams(window.location.search);
   if (params.get("error") || params.get("error_description")) {
     authStatus.textContent = params.get("error_description") || "로그인을 완료하지 못했습니다.";
+    await shop.init(settings);
+    return;
   }
+
   if (isPasswordRecoveryMode()) {
+    if (shop.hasAuthCallbackParams?.()) {
+      authStatus.textContent = "로그인 정보를 확인하는 중입니다.";
+      await shop.completeAuthFromUrl?.(settings);
+    } else {
+      await shop.init(settings);
+    }
     setAuthTab("update");
     authStatus.textContent = "새 비밀번호를 입력해 계정 비밀번호를 변경하세요.";
     return;
   }
 
+  if (shop.hasAuthCallbackParams?.()) {
+    authStatus.textContent = "로그인을 완료하는 중입니다.";
+    await shop.completeAuthFromUrl?.(settings);
+    window.location.replace(nextUrl());
+    return;
+  }
+
+  await shop.init(settings);
   redirectIfSignedIn();
 }
 

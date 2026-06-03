@@ -910,6 +910,46 @@
     return data;
   }
 
+  function hasAuthCallbackParams() {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(String(window.location.hash || "").replace(/^#/, ""));
+    return Boolean(params.get("code") || hashParams.get("access_token") || hashParams.get("refresh_token"));
+  }
+
+  async function completeAuthFromUrl(settings) {
+    window.caseformActiveSettings = settings || window.caseformActiveSettings;
+
+    if (!client || !hasAuthCallbackParams()) return null;
+
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    let sessionData = null;
+
+    if (code && typeof client.auth.exchangeCodeForSession === "function") {
+      const { data, error } = await client.auth.exchangeCodeForSession(code);
+      if (error) throw new Error(authErrorMessage(error));
+      sessionData = data;
+    } else {
+      const { data, error } = await client.auth.getSession();
+      if (error) throw new Error(authErrorMessage(error));
+      sessionData = data;
+    }
+
+    authUser = sessionData?.session?.user || sessionData?.user || authUser;
+    if (!authUser) {
+      const { data, error } = await client.auth.getUser();
+      if (error) throw new Error(authErrorMessage(error));
+      authUser = data?.user || null;
+    }
+
+    if (authUser) {
+      profileCache = null;
+      await refreshRemote(window.caseformActiveSettings);
+    }
+
+    return sessionData;
+  }
+
   async function signInWithOtp({ email, redirectTo } = {}) {
     const cleanEmail = normalizeEmail(email);
     if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("이메일을 확인해주세요.");
@@ -1787,6 +1827,8 @@
     signIn,
     signInWithProvider,
     signInWithGoogle,
+    hasAuthCallbackParams,
+    completeAuthFromUrl,
     signInWithOtp,
     sendPasswordReset,
     updatePassword,
