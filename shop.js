@@ -120,6 +120,9 @@
     if (message.includes("too many") || message.includes("rate limit")) {
       return "로그인 요청이 잠시 제한됐어요. 잠시 후 다시 시도해주세요.";
     }
+    if (message.includes("auth code") && message.includes("code verifier")) {
+      return "로그인 확인 정보가 만료되었습니다. 로그인 버튼을 눌러 다시 시도해주세요.";
+    }
     if (message.includes("user not found")) {
       return "가입되지 않은 이메일입니다. 회원가입 후 다시 로그인해주세요.";
     }
