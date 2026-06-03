@@ -98,9 +98,9 @@ textarea {
   left: 0;
   z-index: 30;
   display: none;
-  min-width: 184px;
-  gap: 10px;
-  padding: 14px;
+  min-width: 198px;
+  gap: 12px;
+  padding: 16px;
   border: 1px solid color-mix(in srgb, var(--gold-soft), transparent 68%);
   border-radius: var(--radius);
   background: rgba(10, 10, 9, 0.96);
@@ -129,12 +129,12 @@ textarea {
   position: absolute;
   left: 0;
   display: inline-flex;
-  width: 34px;
-  height: 40px;
+  width: 40px;
+  height: 42px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 5.5px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -148,8 +148,8 @@ textarea {
 
 .mobile-menu-button span {
   display: block;
-  width: 18px;
-  height: 1.6px;
+  width: 22px;
+  height: 1.8px;
   border-radius: 999px;
   background: currentColor;
 }
@@ -166,15 +166,15 @@ textarea {
   position: absolute;
   right: 0;
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
 }
 
 .mobile-icon-button {
   position: relative;
   display: grid;
-  width: 34px;
-  height: 40px;
+  width: 40px;
+  height: 42px;
   place-items: center;
   border: 0;
   border-radius: 999px;
@@ -190,8 +190,8 @@ textarea {
   content: "";
   position: absolute;
   display: block;
-  width: 23px;
-  height: 23px;
+  width: 26px;
+  height: 26px;
   background: currentColor;
   color: currentColor;
   -webkit-mask: var(--mobile-icon) center / contain no-repeat;
@@ -3536,12 +3536,12 @@ legend,
     position: absolute;
     left: 14px;
     display: inline-flex;
-    width: 34px;
-    height: 40px;
+    width: 40px;
+    height: 42px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 5.5px;
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -3551,8 +3551,8 @@ legend,
 
   .mobile-menu-button span {
     display: block;
-    width: 18px;
-    height: 1.6px;
+    width: 22px;
+    height: 1.8px;
     border-radius: 999px;
     background: currentColor;
   }
@@ -3561,22 +3561,22 @@ legend,
     position: absolute;
     right: 14px;
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
   }
 
   .mobile-icon-button {
     position: relative;
     display: grid;
-    width: 34px;
-    height: 40px;
+    width: 40px;
+    height: 42px;
     place-items: center;
     color: rgba(245, 245, 247, 0.92);
   }
 
   .mobile-icon-button::before {
-    width: 23px;
-    height: 23px;
+    width: 26px;
+    height: 26px;
     margin: 0;
     border: 0;
     border-radius: 0;
@@ -3588,8 +3588,8 @@ legend,
   }
 
   .mobile-icon-button.is-bag::before {
-    width: 23px;
-    height: 23px;
+    width: 26px;
+    height: 26px;
     margin: 0;
     border: 0;
     border-radius: 0;
@@ -3605,9 +3605,9 @@ legend,
     right: auto;
     left: 16px;
     z-index: 30;
-    width: min(188px, calc(100vw - 32px));
+    width: min(204px, calc(100vw - 32px));
     min-width: 0;
-    padding: 14px;
+    padding: 16px;
     border: 1px solid color-mix(in srgb, var(--gold-soft), transparent 68%);
     border-radius: var(--radius);
     background: rgba(10, 10, 9, 0.96);
@@ -3616,7 +3616,7 @@ legend,
 
   .site-header.is-menu-open .nav-links {
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
 
   .hero {
