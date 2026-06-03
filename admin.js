@@ -129,7 +129,7 @@ const adminViewMeta = {
   },
   products: {
     title: "상품 관리",
-    copy: "상품명, 가격, 이미지, 상세 미디어를 수정하고 메인 노출 여부를 정합니다.",
+    copy: "상품명, 가격, 대표 이미지와 영상 파일을 등록하고 판매 노출 상태를 정합니다.",
   },
   inventory: {
     title: "재고 관리",

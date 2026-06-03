@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/checkout.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260603-upload-media-products" />
+    <link rel="stylesheet" href="styles.css?v=20260603-empty-layer-cleanup" />
   </head>
   <body class="checkout-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -111,7 +111,9 @@
             <p class="eyebrow">Summary</p>
             <h2 id="summary-title">주문 요약</h2>
           </div>
-          <div class="checkout-items" id="checkout-items"></div>
+          <div class="checkout-items" id="checkout-items">
+            <div class="account-empty">장바구니에 담긴 상품이 없습니다.</div>
+          </div>
           <dl class="checkout-totals">
             <div>
               <dt>상품 합계</dt>
@@ -119,7 +121,7 @@
             </div>
             <div>
               <dt>배송비</dt>
-              <dd id="checkout-shipping">0원</dd>
+              <dd id="checkout-shipping">무료</dd>
             </div>
             <div class="checkout-total-line">
               <dt>총 결제 예정 금액</dt>
@@ -135,7 +137,7 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260603-upload-media-products"></script>
+    <script src="site-config.js?v=20260603-empty-layer-cleanup"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="shop.js?v=20260603-upload-media-products"></script>

@@ -17,7 +17,7 @@
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/" />
     <meta name="twitter:card" content="summary_large_image" />
     <link id="hero-preload" rel="preload" as="image" href="assets/hero-cases.png" />
-    <link rel="stylesheet" href="styles.css?v=20260603-home-initial-empty" />
+    <link rel="stylesheet" href="styles.css?v=20260603-empty-layer-cleanup" />
   </head>
   <body class="home-page">
     <header class="site-header" aria-label="상단 메뉴">
@@ -52,7 +52,7 @@
         <a class="hero-media" id="hero-media-link" href="products.html" aria-label="상품 목록으로 이동" data-media-mode="empty">
           <span class="hero-empty-message">VELTIER</span>
         </a>
-        <div class="hero-mobile-actions" aria-label="모바일 주요 이동">
+        <div class="hero-mobile-actions" aria-label="모바일 주요 이동" hidden>
           <a id="hero-mobile-product-link" href="product.html?id=0">상품 보기</a>
           <a id="hero-mobile-all-link" href="products.html">전체 상품 보기</a>
         </div>
@@ -62,11 +62,16 @@
       <section class="section collection-section" id="collection" aria-labelledby="collection-title">
         <div class="section-heading">
           <p class="eyebrow" data-setting="collectionEyebrow">Current drop</p>
-          <h2 id="collection-title" data-setting="collectionTitle">색보다 먼저 고르는 건 손에 남는 감각.</h2>
+          <h2 id="collection-title" data-setting="collectionTitle">흰 화면 위 또렷하게 보이는 케이스의 질감.</h2>
         </div>
-        <div class="product-grid home-product-grid" id="product-grid"></div>
+        <div class="product-grid home-product-grid" id="product-grid">
+          <div class="product-empty-state">
+            <strong>등록된 상품이 없습니다.</strong>
+            <p>관리자 상품 관리에서 실제 판매할 상품과 업로드 파일을 추가하세요.</p>
+          </div>
+        </div>
         <div class="collection-view-all-wrap">
-          <a class="collection-view-all" id="collection-view-all" href="products.html">View all</a>
+          <a class="collection-view-all" id="collection-view-all" href="products.html" hidden>View all</a>
         </div>
       </section>
 
@@ -92,10 +97,10 @@
       </section>
     </main>
 
-    <script src="site-config.js?v=20260603-upload-media-products"></script>
+    <script src="site-config.js?v=20260603-empty-layer-cleanup"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="shop.js?v=20260603-upload-media-products"></script>
-    <script src="script.js?v=20260603-upload-media-products"></script>
+    <script src="script.js?v=20260603-empty-layer-cleanup"></script>
   </body>
 </html>

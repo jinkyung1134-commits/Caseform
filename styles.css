@@ -56,6 +56,10 @@ textarea {
   display: none !important;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .site-header {
   position: fixed;
   z-index: 20;

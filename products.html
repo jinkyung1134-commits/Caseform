@@ -16,7 +16,7 @@
     <meta property="og:image" content="https://jinkyung1134-commits.github.io/Caseform/assets/hero-cases.png" />
     <meta property="og:url" content="https://jinkyung1134-commits.github.io/Caseform/products.html" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="stylesheet" href="styles.css?v=20260603-upload-media-products" />
+    <link rel="stylesheet" href="styles.css?v=20260603-empty-layer-cleanup" />
   </head>
   <body class="catalog-page gold-finish">
     <header class="site-header" aria-label="상단 메뉴">
@@ -45,14 +45,19 @@
         <div class="section-heading catalog-page-heading">
           <p class="eyebrow">Current drop</p>
           <h1 id="catalog-title">전체 상품</h1>
-          <p>대표 상품을 넘어서 모든 케이스를 한 화면에서 비교해보세요.</p>
+          <p>상품이 등록되면 모든 케이스를 한 화면에서 비교할 수 있습니다.</p>
         </div>
-        <div class="product-grid" id="product-grid"></div>
+        <div class="product-grid" id="product-grid">
+          <div class="product-empty-state catalog-empty-state">
+            <strong>등록된 상품이 없습니다.</strong>
+            <p>관리자 상품 관리에서 상품을 추가하면 이 페이지에 표시됩니다.</p>
+          </div>
+        </div>
         <div class="catalog-pagination" id="catalog-pagination" aria-label="상품 목록 페이지"></div>
       </section>
     </main>
 
-    <script src="site-config.js?v=20260603-upload-media-products"></script>
+    <script src="site-config.js?v=20260603-empty-layer-cleanup"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260602-supabase-live"></script>
     <script src="shop.js?v=20260603-upload-media-products"></script>

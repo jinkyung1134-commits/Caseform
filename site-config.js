@@ -1,7 +1,8 @@
 (function () {
   const STORAGE_KEY = "caseform-settings";
 
-  const products = [
+  // Used only to recognize and discard product lists saved before sample products were removed.
+  const legacySampleProducts = [
     {
       name: "Ivory Grid",
       material: "사틴 레더",
@@ -251,7 +252,7 @@
   }
 
   function isLegacySampleProduct(product, index) {
-    const sample = products[index];
+    const sample = legacySampleProducts[index];
     if (!product || !sample) return false;
 
     return (
@@ -267,9 +268,21 @@
     return (
       Array.isArray(productList) &&
       productList.length > 0 &&
-      productList.length <= products.length &&
+      productList.length <= legacySampleProducts.length &&
       productList.every((product, index) => isLegacySampleProduct(product, index))
     );
+  }
+
+  function isLegacyHeroSlide(slide) {
+    const desktopImage = mediaSource(slide && slide.desktopImage);
+    const mobileImage = mediaSource(slide && slide.mobileImage);
+    const isDefaultImage = (value) => /assets\/hero-cases(?:-original)?\.png(?:[?#].*)?$/i.test(value || "");
+
+    return isDefaultImage(desktopImage) && (!mobileImage || isDefaultImage(mobileImage));
+  }
+
+  function isLegacyHeroSlideList(slides) {
+    return Array.isArray(slides) && slides.length > 0 && slides.every(isLegacyHeroSlide);
   }
 
   function defaultHeroSlides(sourceProducts = []) {
@@ -326,11 +339,10 @@
       supportEmail: "support@veltier.co",
       customDomain: "",
     },
-    heroEyebrow: "Drop 01 / White Line",
-    heroTitle: "케이스는 보호구가 아니라 세팅입니다.",
-    heroSubtitle:
-      "아이보리 사틴, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요.",
-    heroSpecs: ["Gold line", "39,000원부터", "오늘 주문 시 내일 출고"],
+    heroEyebrow: "Main slide",
+    heroTitle: "메인 슬라이드 준비 중",
+    heroSubtitle: "관리자에서 완성된 PC/모바일 이미지를 업로드하면 이 영역에 표시됩니다.",
+    heroSpecs: [],
     primaryCta: "컬렉션 보기",
     secondaryCta: "배송 안내",
     priceNote: "7일 교환 · 3만원 이상 무료 배송 · 화이트 화면 마감",
@@ -452,7 +464,7 @@
   }
 
   function mergeHeroSlides(baseSlides, savedSlides, sourceProducts) {
-    if (!Array.isArray(savedSlides) || !savedSlides.length) return [];
+    if (!Array.isArray(savedSlides) || !savedSlides.length || isLegacyHeroSlideList(savedSlides)) return [];
 
     const productCount = Math.max((sourceProducts || []).length, 1);
     const fallbackSlides = Array.isArray(baseSlides) && baseSlides.length
@@ -536,13 +548,25 @@
       if (saved.pageTitle === "Caseform - 블랙&골드 프리미엄 핸드폰 케이스") {
         merged.pageTitle = base.pageTitle;
       }
-      if (saved.heroEyebrow === "Drop 01 / Gold Line") {
+      if (saved.heroEyebrow === "Drop 01 / Gold Line" || saved.heroEyebrow === "Drop 01 / White Line") {
         merged.heroEyebrow = base.heroEyebrow;
+      }
+      if (saved.heroTitle === "케이스는 보호구가 아니라 세팅입니다.") {
+        merged.heroTitle = base.heroTitle;
+      }
+      if (
+        saved.heroSubtitle ===
+        "아이보리 사틴, 스모크 클리어, 스트랩 루프까지. 매일 들고 다니는 폰을 취향이 보이는 장비처럼 다시 맞춰보세요."
+      ) {
+        merged.heroSubtitle = base.heroSubtitle;
       }
       if (saved.priceNote === "7일 교환 · 3만원 이상 무료 배송 · 블랙&골드 화면 마감") {
         merged.priceNote = base.priceNote;
       }
-      if (saved.collectionTitle === "블랙 화면 위 골드 라인, 손에는 제품의 질감.") {
+      if (
+        saved.collectionTitle === "블랙 화면 위 골드 라인, 손에는 제품의 질감." ||
+        saved.collectionTitle === "색보다 먼저 고르는 건 손에 남는 감각."
+      ) {
         merged.collectionTitle = base.collectionTitle;
       }
     }
@@ -566,9 +590,13 @@
       saved && saved.heroSlides,
       merged.products,
     );
+    const savedHeroSpecs = saved && saved.heroSpecs;
+    const isLegacyHeroSpecs =
+      Array.isArray(savedHeroSpecs) &&
+      savedHeroSpecs.join("|") === "Gold line|39,000원부터|오늘 주문 시 내일 출고";
     merged.heroSpecs =
-      Array.isArray(saved && saved.heroSpecs) && saved.heroSpecs.length
-        ? saved.heroSpecs
+      Array.isArray(savedHeroSpecs) && savedHeroSpecs.length && !isLegacyHeroSpecs
+        ? savedHeroSpecs
         : clone(base.heroSpecs);
     merged.heroSlideInterval = Math.min(
       Math.max(Number(merged.heroSlideInterval) || Number(base.heroSlideInterval) || 5, 2),

@@ -5,7 +5,6 @@ let selectedIndex = 0;
 let product = products[0] || null;
 const { escapeHtml, mediaSource, productHasMedia, productMediaKind, productMediaMarkup } = window.CaseformConfig;
 const shop = window.CaseformShop;
-const detailFallbackImage = "assets/caseform-obsidian-grid-concept.png?v=20260601-scroll-image";
 const siteHeader = document.querySelector(".site-header");
 const mobileMenuButton = document.querySelector("#mobile-menu-button");
 const jumpPurchaseButton = document.querySelector("#jump-purchase");

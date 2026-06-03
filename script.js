@@ -137,6 +137,9 @@ function renderEmptyHero() {
     heroMobileProductLink.textContent = "상품 준비 중";
     heroMobileProductLink.setAttribute("aria-label", "상품 목록으로 이동");
   }
+  if (heroMobileAllLink) {
+    heroMobileAllLink.closest(".hero-mobile-actions")?.setAttribute("hidden", "");
+  }
   heroMediaLink.href = productsUrl();
   heroMediaLink.dataset.mediaMode = "empty";
   heroMediaLink.classList.remove("has-product-media", "is-campaign-media", "is-static-hero");
@@ -242,6 +245,9 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
       heroMobileProductLink.textContent = "컬렉션 보기";
       heroMobileProductLink.setAttribute("aria-label", "컬렉션 보기");
     }
+    if (heroMobileAllLink) {
+      heroMobileAllLink.closest(".hero-mobile-actions")?.removeAttribute("hidden");
+    }
     heroMediaLink.href = productsUrl();
     heroMediaLink.dataset.mediaMode = "static";
     heroMediaLink.classList.remove("has-product-media");
@@ -281,6 +287,9 @@ function renderHeroSlide(nextIndex = 0, immediate = false) {
         heroMobileProductLink.href = detailUrl;
         heroMobileProductLink.textContent = "상품 보기";
         heroMobileProductLink.setAttribute("aria-label", `${productName} 상품 보기`);
+      }
+      if (heroMobileAllLink) {
+        heroMobileAllLink.closest(".hero-mobile-actions")?.removeAttribute("hidden");
       }
       heroMediaLink.href = detailUrl;
       heroMediaLink.dataset.mediaMode = isCampaignSlide ? "campaign" : settings.heroMediaMode || "blend";
