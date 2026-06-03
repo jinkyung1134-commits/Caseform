@@ -123,6 +123,9 @@
     if (message.includes("auth code") && message.includes("code verifier")) {
       return "로그인 확인 정보가 만료되었습니다. 로그인 버튼을 눌러 다시 시도해주세요.";
     }
+    if (message.includes("invalid jwt") || message.includes("jwt")) {
+      return "로그인 토큰을 확인하지 못했습니다. 로그인 버튼을 눌러 다시 시도해주세요.";
+    }
     if (message.includes("user not found")) {
       return "가입되지 않은 이메일입니다. 회원가입 후 다시 로그인해주세요.";
     }
@@ -916,7 +919,13 @@
   function hasAuthCallbackParams() {
     const params = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(String(window.location.hash || "").replace(/^#/, ""));
-    return Boolean(params.get("code") || hashParams.get("access_token") || hashParams.get("refresh_token"));
+    return Boolean(
+      params.get("code") ||
+        hashParams.get("access_token") ||
+        hashParams.get("refresh_token") ||
+        hashParams.get("error") ||
+        hashParams.get("error_description"),
+    );
   }
 
   async function completeAuthFromUrl(settings) {
@@ -925,10 +934,26 @@
     if (!client || !hasAuthCallbackParams()) return null;
 
     const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(String(window.location.hash || "").replace(/^#/, ""));
     const code = params.get("code");
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const hashError = hashParams.get("error_description") || hashParams.get("error");
     let sessionData = null;
 
-    if (code && typeof client.auth.exchangeCodeForSession === "function") {
+    if (hashError) {
+      throw new Error(hashError);
+    }
+
+    if (accessToken) {
+      if (!refreshToken) throw new Error("로그인 확인 정보가 부족합니다. 다시 로그인해주세요.");
+      const { data, error } = await client.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (error) throw new Error(authErrorMessage(error));
+      sessionData = data;
+    } else if (code && typeof client.auth.exchangeCodeForSession === "function") {
       const { data, error } = await client.auth.exchangeCodeForSession(code);
       if (error) throw new Error(authErrorMessage(error));
       sessionData = data;
